@@ -1,0 +1,135 @@
+mutation CreateUser {
+  user_insert(data: { email: "test@example.com", fullName: "Test User", role: "Member" })
+}
+
+mutation UpdateUser($id: UUID!, $fullName: String) @auth(level: USER) {
+  user_update(key: { id: $id }, data: { fullName: $fullName })
+}
+
+mutation DeleteUser($id: UUID!) @auth(level: USER) {
+  user_delete(key: { id: $id })
+}
+
+query GetUser($id: UUID!) @auth(level: USER) {
+  user(id: $id) { email fullName role bio }
+}
+
+query ListUsers @auth(level: PUBLIC, insecureReason: "Publicly accessible list of users.") {
+  users { email fullName }
+}
+
+mutation CreateJob {
+  job_insert(data: { title: "Software Engineer", company: "Google", description: "FDC dev", salaryRange: "100k-200k" })
+}
+
+mutation UpdateJob($id: UUID!, $title: String) @auth(level: USER) {
+  job_update(key: { id: $id }, data: { title: $title })
+}
+
+mutation DeleteJob($id: UUID!) @auth(level: USER) {
+  job_delete(key: { id: $id })
+}
+
+query GetJob($id: UUID!) @auth(level: PUBLIC, insecureReason: "Jobs are public.") {
+  job(id: $id) { title company description }
+}
+
+query ListJobs @auth(level: PUBLIC, insecureReason: "Jobs are public.") {
+  jobs { title company }
+}
+
+mutation CreateCategory {
+  category_insert(data: { name: "Engineering" })
+}
+
+mutation UpdateCategory($id: UUID!, $name: String) @auth(level: USER) {
+  category_update(key: { id: $id }, data: { name: $name })
+}
+
+mutation DeleteCategory($id: UUID!) @auth(level: USER) {
+  category_delete(key: { id: $id })
+}
+
+query GetCategory($id: UUID!) @auth(level: PUBLIC, insecureReason: "Categories are public.") {
+  category(id: $id) { name }
+}
+
+query ListCategories @auth(level: PUBLIC, insecureReason: "Categories are public.") {
+  categories { name }
+}
+
+mutation CreateStudyMaterial($catId: UUID!) {
+  studyMaterial_insert(data: { title: "Intro to FDC", categoryId: $catId, contentType: "Video" })
+}
+
+mutation UpdateStudyMaterial($id: UUID!, $title: String) @auth(level: USER) {
+  studyMaterial_update(key: { id: $id }, data: { title: $title })
+}
+
+mutation DeleteStudyMaterial($id: UUID!) @auth(level: USER) {
+  studyMaterial_delete(key: { id: $id })
+}
+
+query GetStudyMaterial($id: UUID!) @auth(level: PUBLIC, insecureReason: "Study materials are public.") {
+  studyMaterial(id: $id) { title contentType }
+}
+
+query ListStudyMaterials @auth(level: PUBLIC, insecureReason: "Study materials are public.") {
+  studyMaterials { title contentType }
+}
+
+mutation CreateProgress($userId: UUID!, $materialId: UUID!) @auth(level: USER) {
+  progress_insert(data: { status: "In Progress", userId: $userId, studyMaterialId: $materialId })
+}
+
+mutation UpdateProgress($id: UUID!, $status: String) @auth(level: USER) {
+  progress_update(key: { id: $id }, data: { status: $status })
+}
+
+mutation DeleteProgress($id: UUID!) @auth(level: USER) {
+  progress_delete(key: { id: $id })
+}
+
+query GetProgress($id: UUID!) @auth(level: USER) {
+  progress(id: $id) { status lastAccessedDate }
+}
+
+query ListProgresses @auth(level: USER) {
+  progresses(where: { userId: { eq_expr: "auth.uid" } }) { status }
+}
+
+mutation SaveJob($jobId: UUID!) @auth(level: USER) {
+  savedJob_insert(data: { userId_expr: "auth.uid", jobId: $jobId })
+}
+
+mutation DeleteSavedJob($jobId: UUID!) @auth(level: USER) {
+  savedJob_delete(key: { userId_expr: "auth.uid", jobId: $jobId })
+}
+
+query ListSavedJobs @auth(level: USER) {
+  savedJobs(where: { userId: { eq_expr: "auth.uid" } }) { job { title } }
+}
+
+mutation SaveMaterial($materialId: UUID!) @auth(level: USER) {
+  savedMaterial_insert(data: { userId_expr: "auth.uid", studyMaterialId: $materialId })
+}
+
+mutation DeleteSavedMaterial($materialId: UUID!) @auth(level: USER) {
+  savedMaterial_delete(key: { userId_expr: "auth.uid", studyMaterialId: $materialId })
+}
+
+query ListSavedMaterials @auth(level: USER) {
+  savedMaterials(where: { userId: { eq_expr: "auth.uid" } }) { studyMaterial { title } }
+}
+
+mutation ApplyForJob($jobId: UUID!) @auth(level: USER) {
+  application_insert(data: { status: "Pending", applicationDate_expr: "request.time", userId_expr: "auth.uid", jobId: $jobId })
+}
+
+mutation DeleteApplication($id: UUID!) @auth(level: USER) {
+  application_delete(key: { id: $id })
+}
+
+query ListApplications @auth(level: USER) {
+  applications(where: { userId: { eq_expr: "auth.uid" } }) { status job { title } }
+}

@@ -1,0 +1,23 @@
+ [
+  {
+    "title": "Frontend Developer",
+    "company": "TechNova Solutions",
+    "level": "fresher",
+    "tech": ["JavaScript", "React", "CSS"],
+    "location": "Remote"
+  },
+  {
+    "title": "Backend Developer",
+    "company": "CloudBridge IT",
+    "level": "experienced",
+    "tech": ["Python", "Django", "PostgreSQL"],
+    "location": "Bangalore"
+  },
+  {
+    "title": "Java Developer",
+    "company": "Orion Systems",
+    "level": "fresher",
+    "tech": ["Java", "Spring Boot", "MySQL"],
+    "location": "Pune"
+  }
+]

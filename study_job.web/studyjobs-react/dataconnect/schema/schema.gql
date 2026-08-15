@@ -1,0 +1,53 @@
+type User @table {
+  email: String!
+  fullName: String!
+  role: String!
+  bio: String
+}
+
+type Job @table {
+  title: String!
+  company: String!
+  description: String!
+  salaryRange: String!
+  requirements: String
+  deadlineDate: Date
+  category: Category
+}
+
+type StudyMaterial @table {
+  title: String!
+  category: Category!
+  contentType: String!
+  durationMinutes: Int
+  difficultyLevel: String
+}
+
+type Progress @table {
+  status: String!
+  lastAccessedDate: Timestamp
+  user: User!
+  studyMaterial: StudyMaterial!
+}
+
+type Category @table {
+  name: String!
+  description: String
+}
+
+type Application @table {
+  applicationDate: Timestamp!
+  status: String!
+  user: User!
+  job: Job!
+}
+
+type SavedJob @table(key: ["user", "job"]) {
+  user: User!
+  job: Job!
+}
+
+type SavedMaterial @table(key: ["user", "studyMaterial"]) {
+  user: User!
+  studyMaterial: StudyMaterial!
+}
