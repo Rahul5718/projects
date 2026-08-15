@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1781351153888",
+    "name": "jhon",
+    "email": "jhon@gmail.com",
+    "phone": 98746563210,
+    "password": "$2b$10$G8tdFo/S2LN3jkxelspPzu41yHYvvBNsQYOtTSqHmD8RZ6G2hFVg6"
+  },
+  {
+    "id": "1781351247551",
+    "name": "sam",
+    "email": "sam@gmail.com",
+    "phone": 9874656000,
+    "password": "$2b$10$Ya4kQxzHxfmEVC6Y3tdtMeNb3QH36haNcwj6Ri4K49jlwkNMcQlUe"
+  }
+]

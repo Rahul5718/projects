@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:3000;">
+     <title>ExpenseTracker</title>
+     <link rel="stylesheet" href="/style.css">
+   <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+</head>
+<body>
+     <div>
+          <h1>Welcome to Expense Tracker</h1>
+          <p>Track your expenses and manage your budget effectively.</p>
+          <button type="button" id="signupButton">Get Started</button>
+     </div>
+    
+     
+</body>
+<script>
+            const cashfree = Cashfree({
+                mode: "sandbox",
+            });
+            document.getElementById("renderBtn").addEventListener("click", () => {
+                let checkoutOptions = {
+                    paymentSessionId: "session__CvcEmNKDkmERQrxnx39ibhJ3Ii034pjc8ZVxf3qcgEXCWlgDDlHRgz2XYZCqpajDQSXMMtCusPgOIxYP2LZx0-05p39gC2Vgmq1RAj--gcn",
+                    redirectTarget: "_self",
+                };
+                cashfree.checkout(checkoutOptions);
+            });
+        </script>
+<script type="module" src="/expense.js"></script>
+</html>

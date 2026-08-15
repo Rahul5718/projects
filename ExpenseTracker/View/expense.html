@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/expense-style.css">
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>Expense Tracker</h1>
+        <div id="premiumContainer">
+            <span id="welcomeUser" style="margin-right: 15px; font-weight: bold; font-size: 1.1rem; color: #333;"></span>
+            <button id="buyPremiumBtn" style="background-color: gold; color: black; border: none; padding: 10px 15px; cursor: pointer; font-weight: bold; border-radius: 4px;">Buy Premium Membership</button>
+            <span id="premiumUserTag" class="premium-banner">👑 You are a premium user now</span>
+        </div>
+    </div>
+
+    <div id="paymentResultBanner"></div>
+
+    <div class="main-content">
+        <div class="left-panel">
+            <div class="expense-panel">
+                <form id="expenseForm">
+                    <label for="amount">Amount:</label>
+                    <input type="number" id="amount" required><br><br>
+
+                    <label for="description">Description:</label>
+                    <input type="text" id="description" required><br><br>
+
+                    <label for="category">Category:</label>
+                    <select id="category">
+                        <option value="" disabled selected>Select a category</option>
+                        <option value="Food">Food</option>
+                        <option value="Salary">Salary</option>
+                        <option value="Fuel">Fuel</option>
+                        <option value="Entertainment">Entertainment</option>
+                    </select><br><br>
+
+                    <label for="transactionType">Transaction Type:</label>
+                    <select id="transactionType">
+                        <option value="expense">Expenditure (Money Out)</option>
+                        <option value="credit">Credit / Income (Money In)</option>
+                    </select>
+
+                    <button type="submit">Add Transaction</button>
+                </form>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; margin-top:10px;">
+                <h3 style="margin:0;">Expenses</h3>
+                <label style="margin:0; font-weight:600;" id="expenseLimitLabel">Show</label>
+                <select id="expenseLimitDropdown" aria-labelledby="expenseLimitLabel" style="padding:6px 10px; border-radius:6px; border:1px solid #ccc;">
+                    <option value="2">2</option>
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                </select>
+                <label style="margin:0; font-weight:600;">per page</label>
+            </div>
+            <ul id="expenseList"></ul>
+            <div id="paginationControls"></div>
+        </div>
+
+        <div class="right-panel">
+            <div class="premium-actions">
+                <button id="showLeaderboardBtn">Show Leaderboard</button>
+                
+                <div id="downloadFilterContainer">
+                    <label for="downloadRangeType">Dowload Format:</label>
+                    <select id="downloadRangeType">
+                        <option value="all">All Records</option>
+                        <option value="daily">Today</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="custom">Custom Date Range</option>
+                    </select>
+                    <div id="customDateWrapper">
+                        <input type="date" id="downloadStartDate" placeholder="start_Date">to
+                        <input type="date" id="downloadEndDate" placeholder="end_Date">
+                    </div>
+                    <button id="downloadExpensesBtn" style="display:none;">Download Expenses</button>
+                </div>
+                
+                <button id="downloadExpenseHistoryBtn" style="display:none;">Download Expense History</button>
+
+                <button id="generateSummaryBtn">Generate Expense Summary</button>
+                <button id="logout">Logout</button>
+                <button id="userExpenseBtn">Your_Expense</button>
+            </div>
+
+            <div id="leaderboardMessage" style="margin-top: 10px; color: #d9534f; display: none;"></div>
+            <div id="leaderboardSection">
+                <hr>
+                <h2>Leaderboard 🏆</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th>Position</th>
+                            <th>Name</th>
+                            <th>Total Expenses (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="summaryResult" style="margin-top: 20px; display: none; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; border-radius: 4px; white-space: pre-wrap;"></div>
+
+    <div id="leaderboardSection" style="margin-top: 30px; display: none;">
+        <hr>
+        <h2>Leaderboard 🏆</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th>Position</th>
+                    <th>Name</th>
+                    <th>Total Expenses (₹)</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+        </table>
+    </div>
+
+    <div id="summaryContainer" style="display: none; margin-top: 20px;">
+    <h3>Financial Overview Summary</h3>
+    <table border="1" style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>Year</th>
+                <th>Month</th>
+                <th>Monthly Expenditures</th>
+                <th>Monthly Credits (Income)</th>
+            </tr>
+        </thead>
+        <tbody id="summaryTableBody">
+            </tbody>
+    </table>
+
+    <div style="margin-top: 15px; font-weight: bold; background: #eef6ff; padding: 10px;">
+        <p>Total Yearly Expenditure: $<span id="yearlyExpenditureText">0.00</span></p>
+        <p>Total Yearly Credit: $<span id="yearlyCreditText">0.00</span></p>
+    </div>
+</div>
+    <script type="module" src="/expense.js"></script>
+</body>
+</html>

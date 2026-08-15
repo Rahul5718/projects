@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - User Activity Monitor</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Admin Control Portal</h1>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+    </header>
+
+    <div id="adminChatContainer" style="display: none; margin-top: 30px; padding: 20px; border: 1px solid #ccc;">
+        <h3 id="adminChatTitle">Chatting with: Select a User</h3>
+        
+        <div id="adminChatStreamBody" style="height: 300px; overflow-y: auto; border: 1px solid #444; padding: 10px; margin-bottom: 10px;"></div>
+        
+        <form id="adminChatForm">
+            <input type="text" id="adminMessageInputField" placeholder="Type an answer to help the user..." style="width: 80%; padding: 8px;" autocomplete="off" />
+            <button type="submit" style="padding: 8px 15px;">Send Response</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Registered User Activities</h2>
+        <div id="errorAlert" class="error-msg"></div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone Number</th>
+                    <th>Last Login Timing</th>
+                    <th>Last Logout Timing</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #7f8c8d;">Loading user activities...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="/admin.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</body>
+</html>

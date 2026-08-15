@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBoard - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="glass-app-container">
+        <header class="app-chat-header">
+            <div class="user-profile-widget">
+                <div class="status-avatar-wrapper">
+                    <div class="avatar-glow-ring"></div>
+                    <div class="online-indicator"></div>
+                </div>
+                <div class="meta-profile-details">
+                    <h2 id="displayUserName">Loading Channel...</h2>
+                    <p class="secure-badge">🔒 End-to-End Encryption Secured</p>
+                </div>
+            </div>
+
+            <div class="header-action-tray">
+                <button onclick="toggleSearchTray()" class="action-btn search-toggle-btn" title="Find Private Chat">💬 Direct Message</button>
+                <button onclick="logoutSession()" class="action-btn logout-btn" title="Securely Terminate Session">Sign Out</button>
+            </div>
+        </header>
+
+        <div class="search-routing-tray" id="searchRoutingTray" style="display: none;">
+            <div class="search-input-inner">
+                <input type="text" id="emailSearchInputField" placeholder="Enter user's email or exact name..." autocomplete="off">
+                <button type="button" id="initiateRoomSearchBtn" class="search-action-submit">Connect</button>
+            </div>
+            <div id="activeChatContextBanner" class="active-context-banner" style="display: none;">
+                <span id="contextStatusText">Chatting with: Global Room</span>
+                <button type="button" onclick="returnToGlobalChat()" class="exit-private-btn">× Leave Direct Chat</button>
+            </div>
+        </div>
+
+        <div class="scrollable-chat-pane" id="chatStreamBody">
+            </div>
+        <div id="typingIndicatorContainer" style="color: #ff007f; font-size: 13px; font-style: italic; min-height: 20px; padding: 5px 10px;"></div>
+
+        <div class="chat-input-wrapper" style="position: relative; width: 100%;"></div>
+
+            <div id="aiAssistSuggestionsDeck" style="display: flex; gap: 8px; padding: 6px 10px; overflow-x: auto; background: rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 5px;"></div>
+
+            <form class="interaction-form-tray" id="chatSubmissionForm">
+                <div class="input-glow-wrapper">
+                    <input type="text" id="rawMessageInputField" placeholder="Type a futuristic message..." autocomplete="off" required>
+                </div>
+                <label id="attach-btn" for="mediaFileInputField" style="cursor: pointer; padding: 5px; color: #ff007f; font-size: 20px;">📎</label>
+                <input type="file" id="mediaFileInputField" accept="image/*,video/*,.pdf" style="display: none;">          
+                <button type="submit" class="neon-submit-button">
+                    <span class="btn-arrow-icon">➔</span>
+                </button>
+            </form>
+        </div>
+
+    </div>
+    
+   <script src="/socket.io/socket.io.js"></script>
+    <script src="/userChat.js" defer></script>
+</body>
+</html>

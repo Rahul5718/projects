@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Sing_up</title>
+     <link rel="stylesheet" href="style.css">
+</head>
+<body>
+     <div class="outerContainer">
+          <h1 id="heading">Register bord</h1>
+          <div class="innerContainerR">
+          <form onsubmit="handleSignup(event)">
+               <label for="name">Name :</label>
+               <input type="text" id="name">
+               <br><br>
+
+               <label for="phn">Phone_number :</label>
+
+               <input type="number" id="phn">
+               <br><br>
+
+               <label for="email">Email :</label>
+               <input type="email" id="email">
+               <br><br>
+
+               <label for="password">Password :</label>
+               <input type="password" id="password">
+               <br><br>
+
+               <button type="submit" class="singupBtn">Sing up</button>
+
+          </form>
+          </div>
+     </div>
+     
+</body>
+<script src="/script.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+</html>

@@ -1,0 +1,11 @@
+{
+     "evn":{
+          "PORT": 4000,
+          "Mongo_user": "rahul",
+          "Mongo_pass": "Rahul@123",
+          "Mongo_cluster": "cluster0.qoyvjq2.mongodb.net",
+          "Mongo_database": "ExpenseTracker",
+          "STRIPE_SECRET_KEY": "sk_test_51SwntQ35y4b3c8LrooSZh1jJk8m1tF3uX9gPHVBFMXkMEFsExlK17Fob9YzyfHZVD67C3z31Qq2qQ2tBqlTxKcHu00cqFoTooi",
+          "STRIPE_PUBLIC_KEY": "pk_test_51SwntQ35y4b3c8Lrhq0p2eywZNikfj0dqcteqJ3dr9d2WgRxdwqB8THFm3uEeSy8V5TsbsDSNeGhSB6D0JMjx5rj001QUrdoMn"
+     }
+}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>ToDoList</title>
+     <link rel="stylesheet" href="toDo.css">
+</head>
+<body>
+     <div class="container">
+          
+          <h1 id="heading">TO DO LIST</h1>
+
+          <div class="toDoForm">
+               <form onsubmit="addToDo(event)" class="">
+                    <h1>Add Name And Due_Date</h1>
+
+                    <label for="name">Name :</label>
+                    <input type="text" id="name" name="name">
+
+                    <br><br>
+
+                    <label for="dueDate">Due Date :</label>
+                    <input type="date" id="dueDate" name="dueDate">
+
+                    <br><br>
+
+                    <button type="submit" class="submitBtn">Submit</button>
+
+
+               </form>
+          </div>
+          <hr> <h2>My Tasks</h2>
+          <div class="toDoList"></div>
+
+     </div>
+</body>
+     <script src="dist/toDo.js"></script>
+ <!-- <script src="toDo.js"></script> -->
+</html>

@@ -1,0 +1,997 @@
+
+/* Reset basic styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Colorful Gradient Background covering the whole screen */
+body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+    padding: 20px;
+}
+
+.notification-toast {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 99999;
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    max-width: 340px;
+    line-height: 1.4;
+    font-size: 14px;
+    font-weight: 600;
+    animation: slideInToast 0.3s ease;
+}
+
+@keyframes slideInToast {
+    from { transform: translateY(-12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Center card container */
+.homepage-container {
+    background: rgba(255, 255, 255, 0.1);
+    /* backdrop-filter: blur(10px); */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 40px 30px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Heading styles */
+.hero-section {
+    margin-bottom: 25px;
+}
+
+.app-title {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+/* Gives the "Board" part of the text a WhatsApp-style green accent */
+.app-title span {
+    color: #25d366; 
+}
+
+.tagline {
+    font-size: 1.1rem;
+    color: #e0e0e0;
+}
+
+/* App Description */
+.info-section {
+    margin-bottom: 35px;
+}
+
+.info-section p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #d1d8e0;
+}
+
+/* Auth Buttons Container */
+.auth-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Base button styles */
+.btn {
+    display: block;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Login Button (Subtle border look) */
+.btn-login {
+    background: transparent;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+}
+
+.btn-login:hover {
+    background: #ffffff;
+    color: #203a43;
+}
+
+/* Register Button (Solid Vibrant Accent) */
+.btn-register {
+    background: #00e676; /* Vibrant WhatsApp green tone */
+    color: #0f2027;
+    border: 2px solid #00e676;
+    box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
+}
+
+.btn-register:hover {
+    background: #00c853;
+    border-color: #00c853;
+    transform: translateY(-2px);
+}
+
+.outerContainer {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    text-align: center;
+}
+
+#heading {
+    color: #ffffff;
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    letter-spacing: 0.5px;
+}
+
+.innerContainer form {
+    display: flex;
+    flex-direction: column;
+    text-align: left; /* Aligns labels to the left */
+}
+
+.form-label, label {
+    color: #b0bec5;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+input[type="text"], 
+input[type="password"],
+input[type="email"],
+input[type="number"]{
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+    margin-bottom: 20px; /* Replaces the need for <br> tags */
+}
+
+input[type="text"]:focus, 
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #25d366; /* Vibrant WhatsApp Green accent on focus */
+    box-shadow: 0 0 8px rgba(37, 211, 102, 0.4);
+}
+
+::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.loginBtn {
+    width: 100%;
+    padding: 14px;
+    background: #25d366; /* Bright brand color */
+    color: #0f2027;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+.loginBtn:hover {
+    background: #20ba5a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+}
+
+.loginBtn:active {
+    transform: translateY(0);
+}
+
+.singupBtn {
+    width: 100%;
+    padding: 14px;
+    background: #25d366; /* Bright brand color */
+    color: #0f2027;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+.auth-link {
+    display: inline-block;
+    margin-top: 15px;
+    color: #8fd7ff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+    color: #ffffff;
+}
+
+.messageBox {
+    margin-top: 16px;
+    min-height: 24px;
+    color: #d1f7e0;
+    font-weight: 600;
+}
+
+.forgot-subtitle {
+    color: #dce7ef;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+/* public/css/admin.css */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f4f6f9;
+    color: #333;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #2c3e50;
+    color: #fff;
+    padding: 15px 30px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+h1 {
+    font-size: 24px;
+}
+
+.logout-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: #c0392b;
+}
+
+.container {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #34495e;
+    font-size: 20px;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 1px solid #f2f2f2;
+}
+
+th {
+    background-color: #f8f9fa;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+tr:hover {
+    background-color: #fdfdfd;
+}
+
+.timestamp {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.login-time {
+    color: #27ae60;
+}
+
+.logout-time {
+    color: #e67e22;
+}
+
+.no-data {
+    color: #95a5a6;
+    font-style: italic;
+}
+
+.error-msg {
+    color: #e74c3c;
+    background: #fadbd8;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    display: none;
+}
+
+/* userStyle.css - Glassmorphism UI Style Architecture */
+
+/* Base Reset & Core Fluid Mechanics */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Glass Wrapper Layout Node */
+.glass-app-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 480px; 
+    height: 92vh;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 
+                0 0 40px rgba(139, 92, 246, 0.1);
+    overflow: hidden;
+}
+
+/* 1. APP HEADER DESIGN */
+.app-chat-header {
+    background: rgba(30, 41, 59, 0.5);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 10;
+}
+
+.user-profile-widget {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.status-avatar-wrapper {
+    position: relative;
+    width: 44px;
+    height: 44px;
+}
+
+.avatar-glow-ring {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #8b5cf6, #ec4899);
+    border-radius: 50%;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 12px;
+    height: 12px;
+    background-color: #10b981;
+    border: 2px solid #0f172a;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #10b981;
+}
+
+.meta-profile-details h2 {
+    color: #f8fafc;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+}
+
+.secure-badge {
+    color: #a78bfa;
+    font-size: 11px;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+.action-btn {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-btn:hover {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
+}
+
+/* 2. CHAT FEED & SCROLL AREA */
+.scrollable-chat-pane {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+}
+
+/* Scrollbar Interface Customization */
+.scrollable-chat-pane::-webkit-scrollbar {
+    width: 6px;
+}
+.scrollable-chat-pane::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scrollable-chat-pane::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+.scrollable-chat-pane::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.4);
+}
+
+/* Message Bubble Architecture Layout */
+.neon-bubble-msg {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14.5px;
+    line-height: 1.5;
+    position: relative;
+    word-wrap: break-word;
+    color: #f1f5f9;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.neon-bubble-msg .sender-tag {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.neon-bubble-msg .time-stamp {
+    display: block;
+    font-size: 10px;
+    text-align: right;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+/* Incoming Messages Setup (Left-aligned) */
+.neon-bubble-msg.received {
+    background: rgba(30, 41, 59, 0.7);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.neon-bubble-msg.received .sender-tag { color: #f43f5e; }
+.neon-bubble-msg.received .time-stamp { color: #64748b; }
+
+/* Outgoing Messages Setup (Right-aligned) */
+.neon-bubble-msg.sent {
+    background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 8px 20px rgba(109, 40, 217, 0.25);
+}
+.neon-bubble-msg.sent .sender-tag { color: #f472b6; }
+.neon-bubble-msg.sent .time-stamp { color: #c084fc; }
+
+/* 3. INPUT UTILITY FOOTER BLOCK */
+.interaction-form-tray {
+    padding: 20px 24px;
+    background: rgba(15, 23, 42, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.input-glow-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.interaction-form-tray input {
+    width: 100%;
+    padding: 14px 20px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interaction-form-tray input:focus {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
+}
+
+.neon-submit-button {
+    background: linear-gradient(45deg, #8b5cf6, #ec4899);
+    color: white;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+    transition: all 0.2s;
+}
+
+.neon-submit-button:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(236, 72, 153, 0.5);
+}
+
+.neon-submit-button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn-arrow-icon {
+    font-size: 16px;
+}
+
+/* /css/admin.css - Cyberpunk Admin Command Center Style */
+
+/* Core Configuration & Structural Canvas */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
+    color: #f3f4f6;
+    min-height: 100vh;
+    padding-bottom: 40px;
+}
+
+/* --- FIXED APP HEADER STYLING --- */
+header {
+    background: rgba(17, 24, 39, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(6, 182, 212, 0.2); /* Neon Cyan border hint */
+    padding: 16px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(45deg, #06b6d4, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+}
+
+header .logout-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+header .logout-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
+}
+
+/* --- CENTRAL CONTAINER GRID --- */
+.container {
+    width: 92%;
+    max-width: 1200px;
+    margin: 40px auto 0 auto;
+}
+
+.container h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Dynamic Live Status Dot added before subtitle */
+.container h2::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #10b981;
+}
+
+/* --- DYNAMIC ALERTS (ERROR LOGGING) --- */
+.error-msg {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border-left: 4px solid #ef4444;
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 20px;
+    font-size: 14px;
+    display: none; /* Controlled via script file manipulation toggles */
+}
+
+/* When the alert is active and contains content, unhide smoothly */
+.error-msg:not(:empty) {
+    display: block;
+}
+
+/* --- THE MONITORING DATA TABLE COMPONENT --- */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px; /* Soft spacing between rows */
+    margin-top: 10px;
+}
+
+th {
+    background: transparent;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 20px;
+    text-align: left;
+}
+
+/* Row wrapper baseline configurations */
+tbody tr {
+    background: rgba(31, 41, 55, 0.4);
+    transition: all 0.2s ease;
+}
+
+td {
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #e5e7eb;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* Smooth structural rounding on row card boundaries */
+td:first-child {
+    border-left: 1px solid rgba(255, 255, 255, 0.03);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    font-weight: 600;
+    color: #06b6d4; /* ID columns pop in Cyan text color */
+}
+
+td:last-child {
+    border-right: 1px solid rgba(255, 255, 255, 0.03);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+/* --- HOVER EFFECTS & ROW INTERACTION MODES --- */
+tbody tr:hover {
+    background: rgba(31, 41, 55, 0.8);
+    transform: scale(1.01) translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3),
+                0 0 1px rgba(6, 182, 212, 0.2);
+}
+
+/* Accent highlight left bar on row focus */
+tbody tr:hover td:first-child {
+    border-left: 1px solid #06b6d4;
+}
+
+/* Styling formatting for empty, null, or missing timestamp data fields */
+td[colspan="6"] {
+    background: rgba(17, 24, 39, 0.2);
+    border: 1px dashed rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 40px;
+    font-style: italic;
+}
+
+/* Responsive Fluid Display Mechanics on smaller screen profiles */
+@media (max-width: 768px) {
+    header {
+        padding: 16px 20px;
+    }
+    .container {
+        width: 95%;
+        overflow-x: auto; /* Adds structural slide rails to prevent overflow box breaks */
+    }
+    td, th {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+}
+
+/* Container holding the chat elements */
+.glass-app-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 90vh; /* Adjust height based on your layout preference */
+}
+
+/* 🎯 THE CRITICAL FIX: Ensure the stream container can scroll and has space */
+#chatStreamBody, .scrollable-chat-pane {
+    flex-grow: 1;
+    height: 450px;           /* Gives a rigid structural height constraint */
+    overflow-y: auto;        /* Adds scroll track when text blocks pile up */
+    display: flex;
+    flex-direction: column;  /* Stack messages vertically top to bottom */
+    padding: 20px;
+    gap: 12px;               /* Adds breathing room between consecutive bubbles */
+}
+
+/* Base properties for bubbles */
+.neon-bubble-msg {
+    max-width: 70%;
+    padding: 10px 16px;
+    margin-bottom: 4px;
+    color: #fff;
+    word-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 🎯 Align Sent Messages to the Right side */
+.neon-bubble-msg.sent {
+    align-self: flex-end;
+    background: rgba(0, 230, 118, 0.2); 
+    border: 1px solid rgba(0, 230, 118, 0.4);
+    border-radius: 16px 16px 0px 16px;
+    text-align: right;
+}
+
+/* 🎯 Align Received Messages to the Left side */
+.neon-bubble-msg.received {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px 16px 16px 0px;
+    text-align: left;
+}
+
+/* Timestamp & Sender Tags positioning */
+.sender-tag {
+    font-size: 0.75rem;
+    font-weight: bold;
+    opacity: 0.7;
+    margin-bottom: 4px;
+}
+
+.time-stamp {
+    font-size: 0.65rem;
+    opacity: 0.5;
+    margin-top: 4px;
+    align-self: flex-end;
+}
+
+
+#rawMessageInputField, 
+#adminMessageInputField {
+    font-size: 16px;
+}
+
+#chatStreamBody {
+    height: calc(100vh - 120px); 
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; 
+}
+
+/* Glassmorphism search tray layout placement */
+.search-routing-tray {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 20px;
+    /* backdrop-filter: blur(10px); */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-input-inner {
+    display: flex;
+    gap: 10px;
+}
+
+.search-routing-tray input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #fff;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-routing-tray input:focus {
+    border-color: #ff007f;
+    box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+}
+
+/* Futuristic search neon action triggers */
+.search-action-submit {
+    background: linear-gradient(135deg, #ff007f, #7928ca);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 0px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-action-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+}
+
+/* Chat Target Context Indicators */
+.active-context-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 255, 170, 0.1);
+    border: 1px solid rgba(0, 255, 170, 0.2);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #00ffaa;
+    margin: 10px 20px;
+}
+
+.exit-private-btn {
+    background: transparent;
+    border: none;
+    color: #ff4d4d;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#smart-replies-container {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  background-color: transparent;
+}
+
+.smart-reply-chip {
+  background-color: #e9ecef;
+  color: #212529;
+  border: 1px solid #ced4da;
+  border-radius: 16px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.smart-reply-chip:hover {
+  background-color: #0d6efd;
+  color: #ffffff;
+  border-color: #0d6efd;
+}
