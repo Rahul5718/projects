@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import JobCard from "../components/jobcard";
+import JobCard from "../components/jobCard";
 
 function getTodayName() {
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
