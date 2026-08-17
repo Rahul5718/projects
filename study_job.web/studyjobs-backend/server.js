@@ -8,6 +8,7 @@ const deviceToken = require('./models/deviceToken')
 //firebase
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getMessaging } = require("firebase-admin/messaging");
+
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
   : require("./serviceAccountKey.json");
@@ -42,7 +43,7 @@ app.use(cors());
 app.use(express.json());
 
 mongoose
-  .connect(process.env.MONGO_URI || 'mongodb+srv://rahul:Rahul123@cluster0.qoyvjq2.mongodb.net/studyjobs?retryWrites=true&w=majority')
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
@@ -51,29 +52,29 @@ app.get("/api/jobs", async (req, res) => {
   res.json(jobs);
 });
 
-// app.post('/api/jobs',async (req,res)=>{
-//   const {title,company,level,tech,location,postedDay} = req.body
+app.post('/api/jobs',async (req,res)=>{
+  const {title,company,level,tech,location,postedDay} = req.body
 
-//   if(!title || !company || !level || !tech || !location || !postedDay){
-//     return res.status(400).json({message:'data not provuded'})
-//   }
+  if(!title || !company || !level || !tech || !location || !postedDay){
+    return res.status(400).json({message:'data not provuded'})
+  }
 
-//   const newJob =new Job({
-//     title,
-//     company,
-//     level,
-//     tech,location,
-//     postedDay,
-//     createdAt:new Date()
-//   })
+  const newJob =new Job({
+    title,
+    company,
+    level,
+    tech,location,
+    postedDay,
+    createdAt:new Date()
+  })
 
-//   const savedJob = await newJob.save()
+  const savedJob = await newJob.save()
 
-//  return res.status(201).json({
-//       message: 'Job created successfully',
-//       job: savedJob
-//     });
-// })
+ return res.status(201).json({
+      message: 'Job created successfully',
+      job: savedJob
+    });
+})
 
 app.get("/api/jobs/today", async (req, res) => {
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
