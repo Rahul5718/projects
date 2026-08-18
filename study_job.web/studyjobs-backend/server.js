@@ -4,7 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const Job = require("./models/job");
 const deviceToken = require('./models/deviceToken')
-
+const path = require('path')
 //firebase
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getMessaging } = require("firebase-admin/messaging");
@@ -51,6 +51,10 @@ app.get("/api/jobs", async (req, res) => {
   const jobs = await Job.find();
   res.json(jobs);
 });
+
+app.get('/',(req,res)=>{
+    res.sendFile(path.join(__dirname,'index.html'))
+})
 
 app.post('/api/jobs',async (req,res)=>{
   const {title,company,level,tech,location,postedDay} = req.body
