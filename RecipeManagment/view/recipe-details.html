@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Details & Community - RecipeHub</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+<nav id="mainNav"></nav>
+  <div class="container">
+    <!-- Dynamic Recipe Overview & Action Sidebar -->
+    <div class="panel-card detail-layout" id="recipeDetailsContainer"></div>
+
+    <!-- Rating & Reviews Panel -->
+    <div class="panel-card" style="margin-top: 24px;">
+      <h2>Ratings & Reviews</h2>
+      
+      <form id="reviewForm" style="margin: 20px 0; background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <h4 style="margin-bottom: 8px;">Rate this recipe</h4>
+        <div class="star-rating" id="starContainer">
+          <i class="ri-star-fill" data-val="1"></i>
+          <i class="ri-star-fill" data-val="2"></i>
+          <i class="ri-star-fill" data-val="3"></i>
+          <i class="ri-star-fill" data-val="4"></i>
+          <i class="ri-star-fill" data-val="5"></i>
+        </div>
+        <textarea id="reviewText" rows="3" placeholder="Write feedback or tips for other home cooks..." required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px;"></textarea>
+        <button type="submit" class="btn-add">Submit Feedback</button>
+      </form>
+
+      <div id="reviewsList"></div>
+    </div>
+  </div>
+
+  <!-- Add to Collection Popup Modal -->
+  <div class="collection-modal" id="collectionModal">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 12px;">Save to Collection</h3>
+      <div id="collectionCheckboxes" style="margin-bottom: 16px;"></div>
+      <button class="btn-add" id="saveCollectionBtn" style="width: 100%; margin-bottom: 8px;">Update Collection</button>
+      <button id="closeModalBtn" style="width: 100%; background: none; border: none; color: #64748b; cursor: pointer; padding: 8px;">Cancel</button>
+    </div>
+  </div>
+
+  <script src="/api.js"></script>
+  <script src="/recipe-details.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>

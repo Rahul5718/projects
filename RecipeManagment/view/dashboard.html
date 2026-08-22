@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Studio - RecipeHub</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Dropdown Panels for Notifications and Messages */
+    .dropdown-anchor {
+      position: relative;
+      display: inline-block;
+    }
+    .popover-card {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 45px;
+      width: 320px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      padding: 16px;
+    }
+    .popover-card.active {
+      display: block;
+    }
+    .popover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 12px;
+    }
+    .popover-header h4 {
+      font-size: 0.95rem;
+      color: #0f172a;
+    }
+    .popover-list {
+      max-height: 260px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .popover-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 0.85rem;
+      color: #334155;
+      padding: 6px 0;
+      border-bottom: 1px solid #f8fafc;
+    }
+    .popover-item i {
+      font-size: 1.1rem;
+      color: #2563eb;
+    }
+    /* Favorite Badge on Recipe Card */
+    .btn-fav-card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #ef4444;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 0.2s;
+    }
+    .btn-fav-card:hover {
+      background: #fef2f2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo"><i class="ri-restaurant-2-fill"></i></div>
+      <span class="brand-name">RecipeHub</span>
+    </div>
+    <nav class="sidebar-menu">
+      <p class="menu-label">Menu</p>
+      <a href="/dashboard" class="menu-item active">
+        <i class="ri-dashboard-3-line"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="/profile" class="menu-item">
+        <i class="ri-user-3-line"></i>
+        <span>My Profile</span>
+      </a>
+      <a href="/add-recipe" class="menu-item">
+        <i class="ri-add-circle-line"></i>
+        <span>New Recipe</span>
+      </a>
+      <a href="/collection" class="menu-item">
+        <i class="ri-folder-line"></i>
+        <span>Collections</span>
+      </a>
+      <a href="/profile#favorites" class="menu-item">
+        <i class="ri-heart-3-line"></i>
+        <span>Favorites</span>
+        <span class="badge-pill" id="sidebarFavCount">0</span>
+      </a>
+
+      <p class="menu-label">Settings</p>
+      <a href="/profile" class="menu-item">
+        <i class="ri-settings-4-line"></i>
+        <span>Preferences</span>
+      </a>
+      <a href="/login" id="signOutBtn" class="menu-item logout">
+        <i class="ri-logout-box-r-line"></i>
+        <span>Sign Out</span>
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar-sm" id="sidebarAvatar">U</div>
+      <div class="user-info">
+        <h4 id="sidebarUserName">User</h4>
+        <span id="sidebarUserRole">Creator</span>
+      </div>
+      <i class="ri-more-2-fill more-icon"></i>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-wrapper">
+    <!-- Top Nav Header -->
+    <header class="top-nav">
+      <div class="search-bar">
+        <i class="ri-search-line"></i>
+        <input type="text" id="globalSearchInput" placeholder="Search recipes, ingredients, tags...">
+      </div>
+
+      <div class="nav-actions">
+        <!-- Notifications Trigger & Box -->
+        <div class="dropdown-anchor">
+          <button class="icon-btn" id="notifBtn" title="Notifications">
+            <i class="ri-notification-3-line"></i>
+            <span class="dot-indicator"></span>
+          </button>
+          <div class="popover-card" id="notifPopover">
+            <div class="popover-header">
+              <h4>Notifications</h4>
+              <span class="badge badge-diff" id="notifBadge">0 New</span>
+            </div>
+            <div class="popover-list" id="notifContainer"></div>
+          </div>
+        </div>
+
+        <!-- Messages Trigger & Box -->
+        <div class="dropdown-anchor">
+          <button class="icon-btn" id="msgBtn" title="Messages">
+            <i class="ri-chat-3-line"></i>
+          </button>
+          <div class="popover-card" id="msgPopover">
+            <div class="popover-header">
+              <h4>Messages</h4>
+              <span class="badge badge-diet" id="msgBadge">0 New</span>
+            </div>
+            <div class="popover-list" id="msgContainer"></div>
+          </div>
+        </div>
+
+        <a href="/add-recipe" class="btn-gradient">
+          <i class="ri-add-line"></i> Create Recipe
+        </a>
+      </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <section class="dashboard-content">
+      
+      <!-- Welcome Banner -->
+      <div class="welcome-banner">
+        <div class="banner-text">
+          <h1 id="welcomeHeading">Welcome back! 👋</h1>
+          <p id="welcomeSubtext">Your recipes received engagement this week. Keep up the great cooking!</p>
+        </div>
+        <div class="banner-badge">
+          <span id="userTierBadge">Pro Tier</span>
+        </div>
+      </div>
+
+      <!-- KPI Metrics Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon icon-blue"><i class="ri-book-open-line"></i></div>
+          <div class="stat-details">
+            <span class="stat-title">Published Recipes</span>
+            <div class="stat-number-wrap">
+              <h2 id="kpiRecipesCount">0</h2>
+              <span class="stat-trend positive"><i class="ri-arrow-up-line"></i> Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon icon-rose"><i class="ri-heart-line"></i></div>
+          <div class="stat-details">
+            <span class="stat-title">Saved Favorites</span>
+            <div class="stat-number-wrap">
+              <h2 id="kpiBookmarksCount">0</h2>
+              <span class="stat-trend positive"><i class="ri-arrow-up-line"></i> Saved</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon icon-emerald"><i class="ri-eye-line"></i></div>
+          <div class="stat-details">
+            <span class="stat-title">Total Views</span>
+            <div class="stat-number-wrap">
+              <h2>1.2K</h2>
+              <span class="stat-trend positive"><i class="ri-arrow-up-line"></i> +18%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon icon-amber"><i class="ri-star-line"></i></div>
+          <div class="stat-details">
+            <span class="stat-title">Avg. Rating</span>
+            <div class="stat-number-wrap">
+              <h2>4.9</h2>
+              <span class="stat-stars">★★★★★</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart and Recent Activity -->
+      <div class="chart-activity-grid">
+        <div class="card chart-card">
+          <div class="card-header">
+            <div>
+              <h3>Recipe Performance</h3>
+              <p>Weekly breakdown of views and bookmarks</p>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="performanceChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card activity-card">
+          <div class="card-header">
+            <h3>Recent Community Interactions</h3>
+          </div>
+          <div class="activity-timeline" id="activityFeed">
+            <!-- Dynamically Loaded Interactions -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved Favorites Section -->
+      <div class="card full-card" style="margin-bottom: 24px;">
+        <div class="card-header">
+          <div>
+            <h3>❤️ Your Saved Favorite Recipes</h3>
+            <p>Dishes you bookmarked for quick cooking</p>
+          </div>
+          <a href="/recipes" class="link-btn">Explore More <i class="ri-arrow-right-line"></i></a>
+        </div>
+        
+        <div class="dashboard-recipes-grid" id="favoritesContainer">
+          <!-- Favorite cards injected via JavaScript -->
+        </div>
+      </div>
+
+      <!-- Published Recipes Section -->
+      <div class="card full-card">
+        <div class="card-header">
+          <div>
+            <h3>Your Published Recipes</h3>
+            <p>Recipes created by your account</p>
+          </div>
+          <a href="/add-recipe" class="link-btn">+ New Recipe</a>
+        </div>
+        
+        <div class="dashboard-recipes-grid" id="dashboardRecipesContainer">
+          <!-- User's own recipes injected via JavaScript -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script src="/api.js"></script>
+  <script src="/dashboard.js"></script>
+</body>
+</html>

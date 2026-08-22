@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New Recipe - RecipeHub</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+<nav id="mainNav"></nav>
+
+  <div class="container">
+    <div class="panel-card" style="max-width: 700px; margin: 0 auto;">
+      <h2 style="margin-bottom: 6px;">Submit a New Recipe</h2>
+      <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 24px;">Share your cooking instructions and ingredients with the community.</p>
+
+      <form id="recipeForm">
+        <!-- Title Field -->
+        <div class="filter-item" style="margin-bottom: 16px;">
+          <label for="recipeTitle" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: #475569;">RECIPE TITLE *</label>
+          <input type="text" id="recipeTitle" placeholder="e.g., Creamy Garlic Tuscan Pasta" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+        </div>
+
+        <div class="filters-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 16px;">
+          <div class="filter-item">
+            <label for="category">Category *</label>
+            <select id="category" required>
+              <option value="Breakfast">Breakfast</option>
+              <option value="Lunch">Lunch</option>
+              <option value="Dinner">Dinner</option>
+              <option value="Dessert">Dessert</option>
+              <option value="Snack">Snack</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label for="diet">Dietary Preference *</label>
+            <select id="diet" required>
+              <option value="Vegetarian">Vegetarian</option>
+              <option value="Vegan">Vegan</option>
+              <option value="Gluten-Free">Gluten-Free</option>
+              <option value="Non-Vegetarian">Non-Vegetarian</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 16px;">
+          <div class="filter-item">
+            <label for="difficulty">Difficulty *</label>
+            <select id="difficulty" required>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label for="prepTime">Prep Time (Mins) *</label>
+            <input type="number" id="prepTime" placeholder="30" min="1" required style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+          <div class="filter-item">
+            <label for="servings">Servings *</label>
+            <input type="number" id="servings" placeholder="4" min="1" required style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+        </div>
+
+        <div class="filter-item" style="margin-bottom: 16px;">
+          <label for="imageURL" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: #475569;">IMAGE URL (OPTIONAL)</label>
+          <input type="url" id="imageURL" placeholder="https://images.unsplash.com/photo-..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+        </div>
+
+        <div class="filter-item" style="margin-bottom: 16px;">
+          <label for="ingredients" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: #475569;">INGREDIENTS (One per line) *</label>
+          <textarea id="ingredients" rows="4" placeholder="2 cups flour&#10;1 tsp salt&#10;1 tbsp olive oil" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea>
+        </div>
+
+        <div class="filter-item" style="margin-bottom: 24px;">
+          <label for="instructions" style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: #475569;">INSTRUCTIONS (Step-by-step) *</label>
+          <textarea id="instructions" rows="5" placeholder="1. Preheat oven...&#10;2. Mix ingredients..." required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea>
+        </div>
+
+        <button type="submit" class="btn-add" style="width: 100%; padding: 12px; border: none; cursor: pointer; font-size: 1rem;">Publish Recipe</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/api.js"></script>
+  <script src="/add-recipe.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Moderation - RecipeHub</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+  <nav id="mainNav"></nav>
+
+  <div class="container">
+    <!-- User Moderation -->
+    <div class="panel-card" style="margin-bottom: 24px;">
+      <h2>User Account Moderation</h2>
+      <p style="color: #64748b; margin-bottom: 12px;">Approve or Ban platform users.</p>
+      <table class="admin-table">
+        <thead>
+          <tr><th>User Name</th><th>Email</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="userRows"></tbody>
+      </table>
+    </div>
+
+    <!-- Recipe Moderation -->
+    <div class="panel-card">
+      <h2>Recipe Moderation</h2>
+      <p style="color: #64748b; margin-bottom: 12px;">Remove inappropriate recipes or spam.</p>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Recipe Title</th><th>Author</th><th>Category</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="recipeRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/admin.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Recipes - RecipeHub</title>
+  <!-- Link to External Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+  <!-- Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav id="mainNav"></nav>
+
+  <div class="container">
+    <!-- Filter Control Card -->
+    <div class="panel-card">
+      <h1>Explore Recipes</h1>
+      <p>Search by keywords, ingredients, diet, or prep time.</p>
+
+      <!-- Keyword / Ingredient Search -->
+      <div class="search-box">
+        <i class="ri-search-line"></i>
+        <input type="text" id="searchInput" placeholder="Search by name or ingredients (e.g., pasta, tomato, garlic)...">
+      </div>
+
+      <!-- Advanced Filter Controls -->
+      <div class="filters-grid">
+        <div class="filter-item">
+          <label for="categoryFilter">Category</label>
+          <select id="categoryFilter">
+            <option value="All">All Categories</option>
+            <option value="Breakfast">Breakfast</option>
+            <option value="Lunch">Lunch</option>
+            <option value="Dinner">Dinner</option>
+            <option value="Dessert">Dessert</option>
+            <option value="Snack">Snack</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="dietFilter">Dietary</label>
+          <select id="dietFilter">
+            <option value="All">All Diets</option>
+            <option value="Vegetarian">Vegetarian</option>
+            <option value="Vegan">Vegan</option>
+            <option value="Gluten-Free">Gluten-Free</option>
+            <option value="Non-Vegetarian">Non-Vegetarian</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="diffFilter">Difficulty</label>
+          <select id="diffFilter">
+            <option value="All">All Levels</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <div class="time-header">
+            <label for="timeFilter">Max Time</label>
+            <span id="timeText">≤ 120 mins</span>
+          </div>
+          <input type="range" id="timeFilter" min="10" max="120" step="5" value="120">
+        </div>
+
+        <div class="filter-item">
+          <button class="btn-reset" id="resetBtn">Reset Filters</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Status Bar -->
+    <div class="results-bar">
+      <h3 id="countText">Showing recipes</h3>
+      <select id="sortSelect">
+        <option value="newest">Sort: Newest</option>
+        <option value="fastest">Sort: Quickest</option>
+        <option value="az">Sort: A to Z</option>
+      </select>
+    </div>
+
+    <!-- Cards Grid Container -->
+    <div class="recipes-grid" id="recipesGrid"></div>
+  </div>
+
+  <!-- Link to External JavaScript -->
+  <script src="/api.js"></script>
+  <script src="/browse.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>

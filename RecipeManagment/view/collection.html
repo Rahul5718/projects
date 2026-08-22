@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Collections - RecipeHub</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+ 
+<nav id="mainNav"></nav>
+  <div class="container">
+    <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>My Recipe Collections</h1>
+        <p style="color: #64748b;">Organize your favorite dishes into customized themed books.</p>
+      </div>
+      <button class="btn-add" id="createCollectionBtn">+ Create Collection</button>
+    </div>
+
+    <div id="collectionsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 24px;"></div>
+  </div>
+
+  <script src="/api.js"></script>
+  <script src="/collection.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>
