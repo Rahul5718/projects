@@ -5,6 +5,9 @@ import PostJobPage  from "./pages/PostJobPage";
 import "./App.css";
 import { useEffect } from "react";
 import { messaging, getToken, onMessage } from "./firebase";
+import FeedPage from "./pages/FeedPage"
+import PostContent from "./pages/PostContentPage"
+
 
 // inside your App component
 
@@ -43,12 +46,16 @@ function App() {
         <Link to="/">Jobs</Link>
         <Link to="/saved">Saved</Link>
         <Link to="/post">Post a Job</Link>
+        <Link to="/feed">Study Feed</Link>
+        <Link to="/PostContent">PostContent</Link>
       </nav>
 
       <Routes>
         <Route path="/" element={<JobsPage />} />
         <Route path="/saved" element={<SavedJobsPage />} />
         <Route path="/post" element={<PostJobPage/>}/>
+        <Route path="/feed" element={<FeedPage/>}/>
+        <Route path="/postContent" element={<PostContent/>}/>
       </Routes>
     </div>
   );

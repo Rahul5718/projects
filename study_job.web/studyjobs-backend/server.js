@@ -5,14 +5,18 @@ const mongoose = require("mongoose");
 const Job = require("./models/job");
 const deviceToken = require('./models/deviceToken')
 const path = require('path')
+const Post = require('./models/post')
 //firebase
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getMessaging } = require("firebase-admin/messaging");
+//multer
+const multer = require("multer")
+const cloudinary = require("./config/cloudinary");
+const upload = multer({ storage: multer.memoryStorage() })
 
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
   : require("./serviceAccountKey.json");
-
 
 const firebaseApp = initializeApp({
   credential: cert(serviceAccount),
@@ -105,6 +109,35 @@ app.post("/api/register-token", async(req,res)=>{
     res.status(500).json({error:"failed to save token"})
   }
 })
+
+app.get("/api/posts", async (req, res) => {
+  const posts = await Post.find().sort({ createdAt: -1 }); // newest first
+  res.json(posts);
+})
+
+app.post("/api/posts", async (req, res) => {
+  const newPost = new Post(req.body);
+  await newPost.save();
+  res.status(201).json(newPost);
+})
+
+//multer
+
+app.post("/api/upload", upload.single("file"), async (req, res) => {
+  try {
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    const dataUri = `data:${req.file.mimetype};base64,${b64}`;
+
+    const result = await cloudinary.uploader.upload(dataUri, {
+      resource_type: "auto", // auto-detects image vs video
+    });
+
+    res.json({ url: result.secure_url, type: result.resource_type });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
