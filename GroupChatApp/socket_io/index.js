@@ -16,6 +16,12 @@ module.exports =(server)=>{
      socketAuth(io)
 
      io.on('connection',(socket)=>{
+        const currentUserId = socket.user?.id;
+        if (currentUserId) {
+          socket.join(String(currentUserId));
+        }
+        socket.join('global')
+        console.log(`Socket connected & auto-joined global. User: ${currentUserId || 'Guest'}`)
         chatHandler(io, socket)
         personalChatHandler(io, socket)
      })

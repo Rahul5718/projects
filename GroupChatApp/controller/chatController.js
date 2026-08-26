@@ -33,83 +33,81 @@ function requireAuth(req, res) {
   }
 }
 
-
 exports.sendMessage = async (req, res) => {
-    try {
-        const { text} = req.body;
-        const senderId = req.user.id;
-        const senderName =  req.user.name || 'Anknown'
-        const senderRole = req.user.role || 'user';
-        let receiverId = req.body.receiverId
+  try {
+    const { text } = req.body;
+    const senderId = req.user.id;
+    const senderName = req.user.name || 'Anonymous';
+    const senderRole = req.user.role || 'user';
+    let receiverId = req.body.receiverId;
 
-        if (!req.user) {
-            return res.status(401).json({ success: false, error: 'User context not found on request pipeline' });
-        }
-
-        if (receiverId === undefined || receiverId === null || receiverId === 'null' || receiverId === '') {
-            receiverId = 0; 
-        }else{
-            receiverId = Number(receiverId); 
-        }
-
-        // Validation for middleware
-        if (!text || text.trim()==='') {
-            return res.status(401).json({ success: false, error: 'Message content cannot be blank' });
-        }
-
-        // creat message
-        const newMessage = await Message.create({
-            senderId :senderId,
-            receiverId : receiverId,
-            text :text.trim(),
-            senderRole:senderRole,
-            createdAt: new Date()
-        });
-
-        const io = req.app.get('io')
-
-        let targetRoom = 'global';
-        let privateRoom = ''
-        if (receiverId !== 0) {
-            const sortedIds = [Number(senderId), Number(receiverId)].sort((a, b) => a - b);
-            targetRoom = `private-${sortedIds[0]}-${sortedIds[1]}`;
-        }
-
-        if(io){
-            const messagePayload = {
-                id: newMessage.id,
-                text: newMessage.text,
-                senderId: senderId,
-                roomId: receiverId ===0 ? 'global' : targetRoom,
-                senderName:senderName,
-                senderRole:senderRole,
-                createdAt: newMessage.createdAt
-            };
-
-            io.to(targetRoom).emit('new_message', messagePayload);
-
-            if (receiverId !== 0) {
-                io.to(String(receiverId)).emit('new_message', {
-                    ...messagePayload,
-                    roomId: targetRoom
-                });
-
-                io.to(String(receiverId)).emit('new_notification', {
-                    type: 'personal',
-                    senderId,
-                    senderName,
-                    title: `New message from ${senderName}`,
-                    message: text.trim(),
-                    timestamp: new Date()
-                });
-            }
-        }
-        
-        return res.status(201).json({ success: true, message: newMessage });
-    } catch (err) {
-        console.error('Database Write Error:', err);
-        return res.status(500).json({ success: false, error: 'Failed to record chat message' });
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'User context not found' });
     }
+
+    if (receiverId === undefined || receiverId === null || receiverId === 'null' || receiverId === '' || Number(receiverId) === 0) {
+      receiverId = 0;
+    } else {
+      receiverId = Number(receiverId);
+    }
+
+    if (!text || text.trim() === '') {
+      return res.status(400).json({ success: false, error: 'Message content cannot be blank' });
+    }
+
+    // Save message to MySQL
+    const newMessage = await Message.create({
+      senderId: senderId,
+      receiverId: receiverId,
+      text: text.trim(),
+      senderRole: senderRole,
+      createdAt: new Date()
+    });
+
+    const io = req.app.get('io');
+
+    if (io) {
+      let targetRoom = 'global';
+      if (receiverId !== 0) {
+        const sortedIds = [Number(senderId), Number(receiverId)].sort((a, b) => a - b);
+        targetRoom = `private-${sortedIds[0]}-${sortedIds[1]}`;
+      }
+
+      const messagePayload = {
+        id: newMessage.id,
+        text: newMessage.text,
+        senderId: senderId,
+        receiverId: receiverId,
+        roomId: targetRoom,
+        type: receiverId === 0 ? 'group' : 'personal',
+        senderName: senderName,
+        senderRole: senderRole,
+        createdAt: newMessage.createdAt
+      };
+
+      // 1. Emit to the room (global or private room)
+      io.to(targetRoom).emit('new_message', messagePayload);
+
+      // 2. Extra direct user push for private chats (for alerts/sidebars)
+      if (receiverId !== 0) {
+        io.to(String(receiverId)).emit('new_message', messagePayload);
+        io.to(String(receiverId)).emit('new_notification', {
+          type: 'personal',
+          senderId,
+          senderName,
+          title: `New message from ${senderName}`,
+          message: text.trim(),
+          roomId: targetRoom,
+          timestamp: new Date()
+        });
+      }
+    }
+
+    return res.status(201).json({ success: true, message: newMessage });
+  } catch (err) {
+    console.error('Database Write Error:', err);
+    return res.status(500).json({ success: false, error: 'Failed to record chat message' });
+  }
 };
 
 exports.getChatHistory = async (req, res) => {
@@ -165,7 +163,8 @@ exports.searchUser = async (req, res) => {
             where: {
                 [Op.or]: [
                     { email: query.trim() },
-                    { name: query.trim() }
+                    { name: query.trim() },
+                    ...(Number.isInteger(Number(query.trim())) ? [{ id: Number(query.trim()) }] : [])
                 ]
             }
         });

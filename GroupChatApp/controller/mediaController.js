@@ -19,12 +19,12 @@ const s3 = new S3Client({
 });
 
 async function runTest() {
-    console.log("Checking Region:", process.env.AWS_REGION || "ap-south-1");
-    console.log("Checking Access Key ID:", process.env.AWS_ACCESS_KEY_ID ? "FOUND" : "MISSING");
+    // console.log("Checking Region:", process.env.AWS_REGION || "ap-south-1");
+    // console.log("Checking Access Key ID:", process.env.AWS_ACCESS_KEY_ID ? "FOUND" : "MISSING");
     
     try {
         const command = new PutObjectCommand({
-            Bucket: process.env.AWS_BUCKET_NAME || "chatboxmediabuket",
+            Bucket: process.env.AWS_BUCKET_NAME || "chatboxappmediabuckets",
             Key: "test-connection-file.txt",
             Body: "Connection Test Successful",
             ContentType: "text/plain"
@@ -53,14 +53,15 @@ exports.uploadMediaMessage = async (req, res) => {
         }
 
         // Generate an un-clashable unique filename hash
-        const fileExtension = path.extname(file.originalname);
+        const isImage = file.mimetype.startsWith('image/');
+        const fileExtension = isImage ? '.jpg' : path.extname(file.originalname).toLowerCase();
         const uniqueFileName = `${crypto.randomBytes(16).toString("hex")}${fileExtension}`;
         const region = process.env.AWS_REGION || "ap-south-1";
         const normalizedReceiverId = receiverId && Number(receiverId) !== 0 ? Number(receiverId) : 0;
 
         let optimizedFileBuffer = file.buffer
 
-        if(file.mimetype.startsWith('image/')){
+        if (isImage) {
             optimizedFileBuffer = await sharp(file.buffer)
                 .resize({width:800, withoutEnlargement:true})
                 .jpeg({quality:80})
@@ -68,18 +69,24 @@ exports.uploadMediaMessage = async (req, res) => {
         }
        
         // Build S3 Put Command Payload
+        // Determine actual content type based on file
+        let actualContentType = file.mimetype;
+        if (file.mimetype.startsWith('image/') && file.mimetype !== 'image/jpeg') {
+            actualContentType = 'image/jpeg'; // Converted to JPEG by sharp
+        }
+        
         const uploadParams = {
-            Bucket: process.env.AWS_BUCKET_NAME || "chatboxmediabuket", // Paste your bucket identity string
+            Bucket: process.env.AWS_BUCKET_NAME || "chatboxappmediabuckets",
             Key: `uploads/${uniqueFileName}`,
-            Body:optimizedFileBuffer,
-            ContentType: 'image/jpeg' || 'video/mp4' || file.mimetype, // Ensure correct MIME type is set
+            Body: optimizedFileBuffer,
+            ContentType: actualContentType
         };
 
         // Command dispatch transaction block
         await s3.send(new PutObjectCommand(uploadParams));
 
         // Construct public cloud read URL location
-        const s3MediaUrl = `https://${uploadParams.Bucket}.s3.${region}.amazonaws.com/uploads/${uniqueFileName}`
+        const s3MediaUrl = `https://${uploadParams.Bucket}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
 
         // Save file location URL pointer directly to database message row text attribute
         const newMessage = await Message.create({
@@ -132,6 +139,19 @@ exports.uploadMediaMessage = async (req, res) => {
 
     } catch (error) {
         console.error("AWS S3 Transmission pipeline system fault:", error);
-        return res.status(500).json({ success: false, message: "Cloud multi-part media upload failed." });
+        console.error("Error details:", error.message, error.code);
+        
+        // Specific error messages
+        if (error.message.includes('NoSuchBucket')) {
+            return res.status(400).json({ success: false, message: "AWS bucket not found. Check AWS_BUCKET_NAME." });
+        }
+        if (error.message.includes('AccessDenied') || error.message.includes('InvalidAccessKeyId')) {
+            return res.status(403).json({ success: false, message: "AWS credentials invalid or insufficient permissions." });
+        }
+        if (error.message.includes('ENOENT') || error.message.includes('file')) {
+            return res.status(400).json({ success: false, message: "File processing failed. Try again." });
+        }
+        
+        return res.status(500).json({ success: false, message: "Cloud multi-part media upload failed.", error: error.message });
     }
 }

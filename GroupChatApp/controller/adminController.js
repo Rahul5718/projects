@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize'); 
 const User = require('../model/user'); 
 const Admin = require('../model/admin');
+const Message = require('../model/message');
 
 const JWT_SECRET = '98745632'; // must match ScriptController JWT_SECRET
 

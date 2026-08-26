@@ -1,195 +1,166 @@
 // controller/aiService.js
 const { GoogleGenAI } = require('@google/genai');
 
-// const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const MODEL_NAME = 'gemini-1.5-flash'; // Or 'gemini-2.0-flash'
+// Keep the model configurable because Google retires model aliases over time.
+const MODEL_NAME = process.env.GOOGLE_GENAI_MODEL || 'gemini-3.5-flash-lite';
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 });
 
-// Using stable model name (adjust if using gemini-2.5-flash / gemini-1.5-flash)
-// const modelName = 'gemini-2.5-flash';
-
-// Simple in-memory caches to prevent repeated calls within a 5-minute window
-const predictiveCache = new Map();
+// Cache map: stores previous replies with a TTL to prevent repeated responses
 const smartReplyCache = new Map();
+const predictiveCache = new Map();
 
-// function buildFallbackPredictiveSuggestions(text) {
-//     const cleaned = (text || '').trim();
-//     if (!cleaned) return [];
-
-//     const lower = cleaned.toLowerCase();
-//     if (lower.includes('hello') || lower.includes('hi')) return ['Hi there!', 'How are you?'];
-//     if (lower.includes('thanks') || lower.includes('thank')) return ['You’re welcome!', 'Happy to help!'];
-//     if (lower.includes('bye') || lower.includes('goodbye')) return ['See you soon!', 'Take care!'];
-//     if (lower.includes('work') || lower.includes('meeting')) return ['Sounds good!', 'Let’s discuss it'];
-
-//     return ['Nice!', 'Sounds good!', 'Let’s talk soon'];
-// }
-
-// function buildFallbackSmartReplies(text) {
-//     const cleaned = (text || '').trim();
-//     if (!cleaned) return ['Sounds good! 😊', 'Let’s chat soon'];
-
-//     const lower = cleaned.toLowerCase();
-//     if (lower.includes('hello') || lower.includes('hi')) return ['Hi! 👋', 'Hello there!'];
-//     if (lower.includes('thanks') || lower.includes('thank')) return ['You’re welcome! 😊', 'Happy to help!'];
-//     if (lower.includes('bye') || lower.includes('goodbye')) return ['Take care! 👋', 'See you soon!'];
-//     if (lower.includes('help')) return ['I’m here for you! 💛', 'Tell me more'];
-
-//     return ['Sounds good! 😊', 'I’m on it!', 'Let’s talk soon'];
-// }
-
-// Helper to sanitize JSON response string from Gemini
+// Helper to safely parse JSON from Gemini
 function parseAndCleanJson(rawText) {
-    if (!rawText) return null;
-    // Strip markdown code fences if Gemini accidentally wraps output (```json ... ```)
-    const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    if (!rawText) return [];
     try {
-        return JSON.parse(cleanedText);
+        const cleaned = typeof rawText === 'function' ? rawText() : rawText;
+        const stripped = cleaned.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(stripped);
+        return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-        return null;
+        console.error("JSON parsing error:", e);
+        return [];
     }
 }
 
+/**
+ * Generates 3 to 4 distinct contextual smart replies based on the sender's message.
+ * First internally classifies the message intent (emergency, question, emotional,
+ * casual, request/favor, information/update, greeting) so the replies actually fit
+ * what kind of message it is — e.g. an "emergency" text gets replies like
+ * "What happened?", "Do you need help right now?", "Call me immediately" —
+ * instead of generic replies like "Sounds good!".
+ *
+ * @param {string} incomingMessageText - The message received by the user.
+ * @param {string} tonePreference - e.g. "casual with emojis"
+ * @returns {Promise<string[]>}
+ */
+exports.getSmartReplies = async (incomingMessageText, tonePreference = "casual with emojis") => {
+    if (!incomingMessageText || typeof incomingMessageText !== "string") return [];
+
+    const trimmedInput = incomingMessageText.trim();
+    if (trimmedInput.length === 0) return [];
+
+    // Don't generate smart replies for URLs or file paths
+    if (trimmedInput.includes('http://') || trimmedInput.includes('https://')) return [];
+
+    const cacheKey = `${trimmedInput.toLowerCase()}_${tonePreference}`;
+    if (smartReplyCache.has(cacheKey)) {
+        return smartReplyCache.get(cacheKey);
+    }
+
+    try {
+        const prompt = `You are replying on behalf of the RECEIVER of a chat message.
+
+Step 1 - Classify the incoming message's intent into ONE of these categories:
+- "emergency" (danger, accident, urgent help needed, distress)
+- "emotional" (sad, angry, excited, venting, sharing feelings)
+- "question" (sender is asking something specific)
+- "request" (sender is asking for a favor, item, or action)
+- "information" (sender is sharing news, an update, a fact)
+- "greeting" (hello, checking in, small talk)
+- "other" (anything that doesn't fit the above)
+
+Step 2 - Based on that category, generate 3 to 4 short WhatsApp-style replies the RECEIVER could send back, that genuinely fit the situation.
+
+Category-specific reply behavior:
+- emergency: prioritize urgency and care. e.g. "What happened?", "Are you okay??", "Do you need help right now?", "Calling you now"
+- emotional: acknowledge the feeling first, then offer support or ask what happened.
+- question: directly answer or address the question, don't dodge it.
+- request: either agree, ask for more details, or politely decline/offer an alternative.
+- information: react to the specific news/update, ask a relevant follow-up.
+- greeting: respond warmly and naturally, can ask what's up.
+- other: respond naturally based on the actual content.
+
+Incoming sender message: "${trimmedInput}"
+Tone: ${tonePreference}
+
+Rules:
+    1. Replies must respond to the sender's actual message content/meaning; do not repeat the sender's words.
+    2. Each reply should reflect a different natural angle (e.g. direct response, follow-up question, offer of help/action) appropriate to the classified category.
+    3. Never use generic filler replies such as "Sounds good!", "Nice!", or "Let's talk soon" unless the message specifically calls for them.
+    4. Keep each reply between 2 and 12 words and make each one meaningfully different from the others.
+    5. Return ONLY a valid JSON array of exactly 3 to 4 strings. No markdown, no commentary, no category label in the output — just the reply strings.`;
+
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            config: {
+                systemInstruction: "You are an intelligent real-time conversational chat reply engine. You first silently classify the sender's message intent, then produce natural, context-aware, situationally-appropriate reply suggestions. Return only strict JSON arrays of strings.",
+                responseMimeType: "application/json",
+                temperature: 0.7
+                
+
+            },
+            contents: prompt
+        });
+
+        const rawContent = response.text ? (typeof response.text === 'function' ? response.text() : response.text) : '';
+        const parsedReplies = parseAndCleanJson(rawContent);
+
+        // Filter duplicates and empty strings
+        const distinctReplies = parsedReplies
+            .filter(text => typeof text === 'string' && text.trim().length > 0)
+            .map(text => text.trim())
+            .filter((text, index, replies) => replies.findIndex(reply => reply.toLowerCase() === text.toLowerCase()) === index)
+            .slice(0, 4);
+
+        if (distinctReplies.length > 0) {
+            // Cache for 3 minutes to keep suggestions fresh
+            smartReplyCache.set(cacheKey, distinctReplies);
+            setTimeout(() => smartReplyCache.delete(cacheKey), 3 * 60 * 1000);
+            return distinctReplies;
+        }
+
+        return [];
+    } catch (err) {
+        console.error('Smart reply generative error:', err.message || err);
+        return [];
+    }
+};
+
+/**
+ * Generates inline predictive typing autocomplete suggestions.
+ */
 exports.getPredictiveTyping = async (currentTypedString, tonePreference = "Professional") => {
     if (!currentTypedString || currentTypedString.trim().length < 3) return [];
 
     const trimmedInput = currentTypedString.trim();
     const cacheKey = `${trimmedInput.toLowerCase()}_${tonePreference}`;
 
-    // 1. Check in-memory cache first
     if (predictiveCache.has(cacheKey)) {
         return predictiveCache.get(cacheKey);
     }
 
     try {
         const response = await ai.models.generateContent({
-            model: modelName,
+            model: MODEL_NAME,
             config: {
-                systemInstruction: "You are a chat input auto-complete engine. Predict the next 2 to 4 words or short phrases that naturally finish the user's sentence block. Return ONLY a valid JSON array of strings. Do not include markdown formatting or wrapping code blocks. Keep entries under 4 words.",
+                systemInstruction: "You are a chat input auto-complete engine. Complete the user's sentence naturally. Return ONLY a valid JSON array of strings under 4 words.",
                 responseMimeType: "application/json",
                 temperature: 0.2
             },
-            contents: `The user typed: "${trimmedInput}". Tone adaptation context profile: ${tonePreference}. Output completion options now.`
+            contents: `User is typing: "${trimmedInput}". Tone: ${tonePreference}. Suggest completions.`
         });
 
-        const parsed = parseAndCleanJson(response.text);
-        const result = Array.isArray(parsed) ? parsed : [];
+        const rawContent = response.text ? (typeof response.text === 'function' ? response.text() : response.text) : '';
+        const parsed = parseAndCleanJson(rawContent);
+        const result = Array.isArray(parsed) ? parsed.slice(0, 3) : [];
 
-        // 2. Cache successful results for 5 minutes
         if (result.length > 0) {
             predictiveCache.set(cacheKey, result);
-            setTimeout(() => predictiveCache.delete(cacheKey), 5 * 60 * 1000);
+            setTimeout(() => predictiveCache.delete(cacheKey), 3 * 60 * 1000);
         }
 
         return result;
-
     } catch (err) {
-        // 3. Graceful handling for 429 Rate Limits or Quota exhaustion
-        if (err.status === 429 || err.message?.includes("429") || err.message?.includes("Quota")) {
-            console.warn("⚠️ Gemini API Rate Limit (429) hit in getPredictiveTyping. Using fallback.");
-            return buildFallbackPredictiveSuggestions(trimmedInput);
+        if (isQuotaError(err)) {
+            blockAiQuota();
+        } else {
+            console.error('Predictive typing error:', err.message || err);
         }
-
-        console.error('predictive autocomplete pipeline error:', err);
-        return buildFallbackPredictiveSuggestions(trimmedInput);
+        return [];
     }
-};
-
-// exports.getSmartReplies = async (incomingMessageText, tonePreference = "casual with emojis") => {
-//     if (!incomingMessageText || typeof incomingMessageText !== "string") return [];
-
-//     const trimmedInput = incomingMessageText.trim();
-//     if (trimmedInput.length === 0) return [];
-
-//     const cacheKey = `${trimmedInput.toLowerCase()}_${tonePreference}`;
-
-//     // 1. Check in-memory cache first
-//     if (smartReplyCache.has(cacheKey)) {
-//         return smartReplyCache.get(cacheKey);
-//     }
-
-//     try {
-//         const response = await ai.models.generateContent({
-//             model: modelName,
-//             config: {
-//                 systemInstruction: "You are an in-app messaging smart reply engine. Read the incoming message context and output exactly 3 contextual, natural, and helpful short alternative replies. Return ONLY a valid JSON array of strings. Do not include markdown or backticks.",
-//                 responseMimeType: "application/json"
-//             },
-//             contents: `Incoming message to answer: "${trimmedInput}". Personalization setting: ${tonePreference}. Provide reply options.`
-//         });
-
-//         const parsed = parseAndCleanJson(response.text);
-//         const result = Array.isArray(parsed) ? parsed : [];
-
-//         // 2. Cache successful results for 5 minutes
-//         if (result.length > 0) {
-//             smartReplyCache.set(cacheKey, result);
-//             setTimeout(() => smartReplyCache.delete(cacheKey), 5 * 60 * 1000);
-//         }
-
-//         return result;
-
-//     } catch (err) {
-//         // 3. Graceful handling for 429 Rate Limits
-//         if (err.status === 429 || err.message?.includes("429") || err.message?.includes("Quota")) {
-//             console.warn("⚠️ Gemini API Rate Limit (429) hit in getSmartReplies. Using fallback.");
-//             return buildFallbackSmartReplies(trimmedInput);
-//         }
-
-//         console.error("Smart replies generative failure:", err);
-//         return buildFallbackSmartReplies(trimmedInput);
-//     }
-// };
-
-
-// controller/aiService.js
-
-
-/**
- * Generates dynamic smart replies based on the sender's incoming message text.
- * @param {string} senderMessage - The text received from the sender.
- * @param {string} tone - Optional tone preference (e.g., "casual with emojis").
- * @returns {Promise<Array<string>>}
- */
-exports.getSmartReplies = async (senderMessage, tone = 'casual with emojis') => {
-  const cleanedMessage = (senderMessage || '').trim();
-  if (!cleanedMessage) return [];
-
-  const prompt = `
-You are an AI assistant in a messaging application. 
-Generate exactly 3 short, natural, context-aware reply suggestions for a user replying to this incoming message.
-
-Sender's Message: "${cleanedMessage}"
-Desired Tone: ${tone}
-
-Rules:
-1. Provide exactly 3 short response options (1 to 6 words each).
-2. Base the choices directly on the context of the sender's message.
-3. Return ONLY a valid JSON array of 3 strings. Example format: ["Option 1", "Option 2", "Option 3"]
-4. Do NOT include markdown code blocks, explanatory text, or extra characters.
-`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-    });
-
-    const rawText = response.text ? response.text().trim() : '';
-    // Clean markdown backticks if Gemini wraps the array in ```json ... ```
-    const sanitizedText = rawText.replace(/```json|```/g, '').trim();
-
-    const parsedReplies = JSON.parse(sanitizedText);
-    if (Array.isArray(parsedReplies) && parsedReplies.length > 0) {
-      return parsedReplies.slice(0, 3);
-    }
-  } catch (err) {
-    console.error('Error generating AI smart replies:', err);
-  }
-
-  // Return empty array if generation fails so the UI gracefully handles it
-  return [];
 };

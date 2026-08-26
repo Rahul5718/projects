@@ -1,4 +1,5 @@
 const express = require('express')
+const path = require('path')
 
 const router=express.Router()
 
@@ -6,6 +7,9 @@ const controller = require('../controller/ScriptController')
 const AdminController = require('../controller/adminController')
 const chatController = require('../controller/chatController')
 const userAuthentication = require('../middleware/auth')
+const resetpassword = require('../controller/forgotPasswor')
+const passwordController = require('../controller/passwordReset')
+const aiController = require('../controller/aiController')
 
 const multer = require('multer')
 const mediaController = require('../controller/mediaController')

@@ -1,0 +1,45 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5"/>
+      <stop offset="55%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#DB2777"/>
+    </linearGradient>
+    <linearGradient id="bubbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#1E1B4B" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- App icon background -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+
+  <!-- subtle inner ring for depth -->
+  <rect x="18" y="18" width="476" height="476" rx="100" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2"/>
+
+  <!-- Chat bubble shape -->
+  <g filter="url(#softShadow)">
+    <path d="M256 96
+             C 350 96, 420 156, 420 232
+             C 420 308, 350 368, 256 368
+             C 232 368, 209 364, 189 357
+             L 122 388
+             C 112 393, 101 385, 104 374
+             L 120 316
+             C 100 293, 92 264, 92 232
+             C 92 156, 162 96, 256 96 Z"
+          fill="url(#bubbleGrad)"/>
+  </g>
+
+  <!-- Monogram: R + G merged, standing for Rahul + GroupChatApp -->
+  <text x="180" y="262" font-family="Georgia, 'Times New Roman', serif" font-size="150" font-weight="700" fill="#4F46E5">R</text>
+  <text x="270" y="262" font-family="Georgia, 'Times New Roman', serif" font-size="150" font-weight="700" fill="#DB2777">G</text>
+
+  <!-- small connecting dot motif referencing chat/message -->
+  <circle cx="256" cy="410" r="9" fill="#FFFFFF" fill-opacity="0.85"/>
+  <circle cx="285" cy="410" r="9" fill="#FFFFFF" fill-opacity="0.55"/>
+  <circle cx="227" cy="410" r="9" fill="#FFFFFF" fill-opacity="0.55"/>
+</svg>

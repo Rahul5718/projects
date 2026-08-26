@@ -40,6 +40,7 @@ let currentActivePrivateRoomId = null;
 let activeTargetPartnerId = 1;
 let activeSmartReplyOptions = [];
 let isSmartReplyModeActive = false;
+let smartReplyRequestNumber = 0;
 
 const urlParams = new URLSearchParams(window.location.search);
 const targetChatPartnerId = Number(urlParams.get('with')) || 1;
@@ -60,7 +61,7 @@ let isSubmitting = false
 
 async function fetchCurrentProfile() {
     try {
-        const response = await fetch('http://localhost:3000/auth/profile', {
+        const response = await fetch('http://localhost:3000/chatbord/user', {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${activeSessionToken}` }
         });
@@ -97,69 +98,71 @@ window.addEventListener('DOMContentLoaded', () => {
 });
     //socket listener
 function setupSocketListeners() {
-    socket.off('new_message'); // Strip old listeners to prevent duplicates
-    socket.off('user_typing');
-    socket.off('user_stopped_typing');
-    socket.off('new_notification');
-    socket.off('connect');
+  socket.off('new_message');
+  socket.off('receive_group_message');
+  socket.off('user_typing');
+  socket.off('user_stopped_typing');
+  socket.off('new_notification');
+  socket.off('connect');
 
-    socket.on('connect', () => {
-        console.log('Socket connected:', socket.id);
+  socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+    socket.emit('join_room', 'global');
+    if (currentUserId) {
+      socket.emit('join_room', String(currentUserId));
+    }
+    if (currentActivePrivateRoomId) {
+      socket.emit('join_room', currentActivePrivateRoomId);
+    }
+  });
 
-        socket.emit('join_room', 'global');
-        if (currentUserId) {
-            socket.emit('join_room', String(currentUserId));
-        }
-        setTimeout(() => {
-            if (currentActivePrivateRoomId) {
-                socket.emit('join_room', currentActivePrivateRoomId);
-            }
-        }, 250);
+  // Handles both global and private incoming messages cleanly
+  socket.on('new_message', (incomingMessage) => {
+    if (!incomingMessage) return;
+
+    const isFromMe = Number(incomingMessage.senderId) === Number(currentUserId);
+    const msgRoomId = incomingMessage.roomId || (Number(incomingMessage.receiverId) === 0 ? 'global' : null);
+    const isGlobalMsg = msgRoomId === 'global' || Number(incomingMessage.receiverId) === 0;
+
+    const insideThisPrivateRoom = currentActivePrivateRoomId && msgRoomId === currentActivePrivateRoomId;
+    const insideGlobalRoom = !currentActivePrivateRoomId && isGlobalMsg;
+
+    if (insideThisPrivateRoom) {
+      renderVisualChatFeed(incomingMessage);
+    } else if (insideGlobalRoom) {
+      appendGroupBubble(incomingMessage);
+    }
+
+    if (!isFromMe && typeof incomingMessage.text === 'string' && incomingMessage.text.trim()) {
+      notifyIncomingMessage(incomingMessage);
+      handleIncomingSmartReplyTrigger(incomingMessage.text);
+    }
+  });
+
+  socket.on('new_notification', (data) => {
+    if (!data || Number(data.senderId) === Number(currentUserId)) return;
+    notifyIncomingMessage({
+      text: data.message || data.text || '',
+      senderName: data.senderName || data.title || 'New message',
+      senderId: data.senderId,
+      type: data.type,
+      groupId: data.groupId,
+      roomId: data.roomId
     });
+  });
 
-    socket.on('new_message', (incomingMessage) => {
-        if (!incomingMessage) return;
+  socket.on('user_typing', (data) => {
+    if (typingIndicatorContainer && Number(data.senderId) !== Number(currentUserId)) {
+      typingIndicatorContainer.innerText = `${data.senderName} is typing...`;
+    }
+  });
 
-        const isFromMe = Number(incomingMessage.senderId) === Number(currentUserId);
-        const insideThisPrivateRoom = currentActivePrivateRoomId && incomingMessage.roomId === currentActivePrivateRoomId;
-        const insideGlobalRoom = !currentActivePrivateRoomId && incomingMessage.roomId === 'global';
-
-        if (insideThisPrivateRoom) {
-            renderVisualChatFeed(incomingMessage);
-        } else if (insideGlobalRoom) {
-            appendGroupBubble(incomingMessage);
-        }
-
-        if (!isFromMe && typeof incomingMessage.text === 'string' && incomingMessage.text.trim()) {
-            notifyIncomingMessage(incomingMessage);
-            handleIncomingSmartReplyTrigger(incomingMessage.text);
-        }
-
-    });
-
-    socket.on('new_notification', (data) => {
-        if (!data) return;
-        if(Number(data.senderId)=== Number(currentUserId)) return
-        console.log('Notification event received:', data);
-        notifyIncomingMessage({
-            text: data.message || data.text || '',
-            senderName: data.senderName || data.title || 'New message'
-        });
-    });
-
-    socket.on('user_typing', (data) => {
-        if (typingIndicatorContainer) {
-            typingIndicatorContainer.innerText = `${data.senderName} is typing...`;
-        }
-    });
-
-    socket.on('user_stopped_typing', () => {
-        if (typingIndicatorContainer) {
-            typingIndicatorContainer.innerText = ''; // Clears the display completely
-        }
-    });
+  socket.on('user_stopped_typing', (data) => {
+    if (typingIndicatorContainer && (!data || Number(data.senderId) !== Number(currentUserId))) {
+      typingIndicatorContainer.innerText = '';
+    }
+  });
 }
-
 
 // 3. PERSISTENCE ENGINE: Fetch historical records from server endpoints
 async function refreshChatPipeline() {
@@ -236,7 +239,7 @@ function renderVisualChatFeed(messages) {
         let messageContentHTML = ''
 
         if (isMediaFile) {
-            const fileUrl = message.text || message.message || ''
+            const fileUrl = normalizeMediaUrl(message.text || message.message || '')
             const mimeType = message.fileType || ''
 
             if (mimeType.startsWith('video/') || fileUrl.match(/\.(mp4|webm|mov|avi)$/i)) {
@@ -280,6 +283,19 @@ function escapeHTML(str) {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+function normalizeMediaUrl(rawUrl) {
+    try {
+        const url = new URL(rawUrl);
+        url.pathname = url.pathname
+            .replace('/uploads/uploads/', '/uploads/')
+            .replace('/uploads/mediareceiver/', '/uploads/')
+            .replace('/mediareceiver/', '/uploads/');
+        return url.href;
+    } catch {
+        return rawUrl;
+    }
+}
+
 // Termination block to scrub runtime context variables cleanly
 function logoutSession() {
     localStorage.clear();
@@ -303,20 +319,23 @@ function appendGroupBubble(message) {
 
     const senderLabel = isMe ? 'You' : (message.senderName || 'User');
     const actualText = message.text || message.message || '';
+    const mediaUrl = actualText.startsWith('https://') && actualText.includes('.amazonaws.com/')
+        ? normalizeMediaUrl(actualText)
+        : actualText;
 
     // Initialize layout body content default format
     let displayBodyContent = `<div>${escapeHTML(actualText)}</div>`;
     
     // Check if message is a secure S3 link string location pointer
-    if (actualText.startsWith('https://') && actualText.includes('.amazonaws.com/')) {
-        const lowercaseUrl = actualText.toLowerCase();
+    if (mediaUrl.startsWith('https://') && mediaUrl.includes('.amazonaws.com/')) {
+        const lowercaseUrl = mediaUrl.toLowerCase();
         
         if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].some(ext => lowercaseUrl.includes(ext))) {
-            displayBodyContent = `<img src="${actualText}" alt="Sent Image" style="max-width:100%; border-radius:4px; margin-top:5px; display:block; box-shadow: 0 0 5px rgba(0,0,0,0.3);">`;
+            displayBodyContent = `<img src="${mediaUrl}" alt="Sent Image" style="max-width:100%; border-radius:4px; margin-top:5px; display:block; box-shadow: 0 0 5px rgba(0,0,0,0.3);">`;
         } else if (['.mp4', '.webm', '.ogg'].some(ext => lowercaseUrl.includes(ext))) {
-            displayBodyContent = `<video src="${actualText}" controls style="max-width:100%; border-radius:4px; margin-top:5px; display:block;"></video>`;
+            displayBodyContent = `<video src="${mediaUrl}" controls style="max-width:100%; border-radius:4px; margin-top:5px; display:block;"></video>`;
         } else {
-            displayBodyContent = `<a href="${actualText}" target="_blank" style="color:#00ffff; font-weight:bold; text-decoration:underline; display:block; margin-top:5px;">📎 Download Shared Document File</a>`;
+            displayBodyContent = `<a href="${mediaUrl}" target="_blank" style="color:#00ffff; font-weight:bold; text-decoration:underline; display:block; margin-top:5px;">📎 Download Shared Document File</a>`;
         }
     }
 
@@ -340,7 +359,7 @@ async function handleFormSubmit(event) {
 
     const fileInput = document.getElementById('mediaFileInputField');
     const selectedFile = fileInput && fileInput.files && fileInput.files.length > 0 ? fileInput.files[0] : null;
-    const receiverId = currentActivePrivateRoomId ? activeTargetPartnerId : 0;
+    const receiverId = currentActivePrivateRoomId ? Number(activeTargetPartnerId) : 0;
     //multi media file upload handling
     if (selectedFile) {
         try {
@@ -399,7 +418,8 @@ async function handleFormSubmit(event) {
                 senderId: currentUserId,
                 senderName: currentUserName || 'You',
                 createdAt: result.message.createdAt || new Date(),
-                roomId: currentActivePrivateRoomId || 'global'
+                roomId: currentActivePrivateRoomId || 'global',
+                receiverId: receiverId
             };
 
             if (currentActivePrivateRoomId) {
@@ -510,27 +530,64 @@ window.connectToUserBySearchPayload = async function() {
         alert("An error occurred while connecting to the private chat.");
     }
 }
+window.openPrivateChatFromNotification = async function(senderId) {
+    const numericSenderId = Number(senderId);
+    if (!numericSenderId || numericSenderId === Number(currentUserId)) return;
+
+    try {
+        const response = await fetch(`http://localhost:3000/chatbord/searchUser?query=${numericSenderId}`, {
+            headers: { 'Authorization': `Bearer ${activeSessionToken}` }
+        });
+        const result = await response.json();
+        if (!response.ok || !result.user) throw new Error(result.message || 'Sender profile not found.');
+
+        activeTargetPartnerId = numericSenderId;
+        const nextRoomId = getPrivateRoomId(currentUserId, numericSenderId);
+        if (currentActivePrivateRoomId && currentActivePrivateRoomId !== nextRoomId) {
+            socket.emit('leave_room', currentActivePrivateRoomId);
+        }
+        currentActivePrivateRoomId = nextRoomId;
+        socket.emit('join_room', nextRoomId);
+
+        if (displayUserName) displayUserName.innerText = `Direct Line: ${result.user.name}`;
+        const searchTray = document.getElementById('searchRoutingTray');
+        const contextBanner = document.getElementById('activeChatContextBanner');
+        const contextStatusText = document.getElementById('contextStatusText');
+        if (searchTray) searchTray.style.display = 'block';
+        if (contextStatusText) contextStatusText.innerText = `Chatting with: ${result.user.name} (${result.user.email})`;
+        if (contextBanner) contextBanner.style.display = 'block';
+
+        chatStreamBody.innerHTML = '<div style="text-align:center;color:#666;padding:20px;">Fetching private transcripts...</div>';
+        const historyResponse = await fetch(`http://localhost:3000/chatbord/history?with=${numericSenderId}`, {
+            headers: { 'Authorization': `Bearer ${activeSessionToken}` }
+        });
+        const historyPayload = await historyResponse.json();
+        const historyMessages = historyPayload.messages || [];
+        chatStreamBody.innerHTML = '';
+        if (historyMessages.length > 0) renderVisualChatFeed(historyMessages);
+        else chatStreamBody.innerHTML = '<div style="text-align:center;color:#999;padding:20px;font-style:italic;">No messages here yet.</div>';
+    } catch (error) {
+        console.error('Private notification navigation failed:', error);
+        alert('Unable to open this private conversation.');
+    }
+};
 window.returnToGlobalChat = function() {
-    const contextBanner = document.getElementById('activeChatContextBanner');
-    
-    if (!currentActivePrivateRoomId) return;
+  const contextBanner = document.getElementById('activeChatContextBanner');
 
-   
+  if (currentActivePrivateRoomId) {
     socket.emit('leave_room', currentActivePrivateRoomId);
-    console.log(`Abandoned private channel tracking instance: ${currentActivePrivateRoomId}`);
+  }
 
-    
-    currentActivePrivateRoomId = null;
-    activeTargetPartnerId = 1; 
+  currentActivePrivateRoomId = null;
+  activeTargetPartnerId = null; // Clears the private target partner
 
-    
-    if (displayUserName) displayUserName.innerText = 'Global Group Chat Room';
-    if (contextBanner) contextBanner.style.display = 'none'; 
+  if (displayUserName) displayUserName.innerText = 'Global Group Chat Room';
+  if (contextBanner) contextBanner.style.display = 'none';
 
-    chatStreamBody.innerHTML = '<div style="text-align:center;color:#666;padding:20px;">Reconnecting group workspace records...</div>';
-   
-    refreshChatPipeline();
-}
+  socket.emit('join_room', 'global');
+  chatStreamBody.innerHTML = '<div style="text-align:center;color:#666;padding:20px;">Loading global chat messages...</div>';
+  refreshChatPipeline();
+};
 
 function getPrivateRoomId(userId1, userId2) {
     const sortedIds = [Number(userId1), Number(userId2)].sort((a, b) => a - b);
@@ -602,19 +659,27 @@ if (mediaFileInputField) {
                 body: multipartFormPayload
             });
 
-            if (uploadResponse.ok) {
-                console.log("Cloud asset successfully saved.");
-                chatSubmissionForm.reset();
-            }
+                const uploadResult = await uploadResponse.json();
+            
+                if (!uploadResponse.ok) {
+                    const errorMsg = uploadResult.message || uploadResult.error || "File upload failed. Check AWS credentials.";
+                    console.error("Upload error response:", uploadResult);
+                    throw new Error(errorMsg);
+                }
 
-            if (!uploadResponse.ok) {
-                throw new Error("HTTP connection error during file processing.");
-            }
+                if (uploadResponse.ok) {
+                    console.log("Cloud asset successfully saved.", uploadResult);
+                    chatSubmissionForm.reset();
+                    // Auto-broadcast uploaded media to chat room if socket ready
+                    if (socket && uploadResult.messageId) {
+                        console.log("Media message created:", uploadResult.url);
+                    }
+                }
 
             console.log("Cloud S3 asset successfully locked in place.");
-        } catch (uploadError) {
+            } catch (uploadError) {
             console.error("Multimedia delivery sequence failure:", uploadError);
-            alert("Unable to deliver attachment payload.");
+                alert("Upload failed: " + uploadError.message);
         } finally {
             // Drop visual loading message block indicator safely
             const loader = document.getElementById('uploadLoader');
@@ -717,7 +782,9 @@ inputField.addEventListener('input', (e) => {
 
 function handleIncomingSmartReplyTrigger(incomingMessageText) {
     // Skip trying to generate smart replies for S3 file URL strings
-    if (incomingMessageText.includes('amazonaws.com/uploads/')) return;
+    if (!incomingMessageText || incomingMessageText.includes('amazonaws.com/uploads/')) return;
+
+    const requestNumber = ++smartReplyRequestNumber;
 
     fetch('http://localhost:3000/chatbord/ai/smart-replies', {
         method: 'POST',
@@ -729,12 +796,14 @@ function handleIncomingSmartReplyTrigger(incomingMessageText) {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success) {
-            const replies = Array.isArray(data.replies) && data.replies.length > 0
-                ? data.replies
-                : ['Sounds good! 😊', 'Let’s chat soon'];
-            renderAIChips(replies, true);
-        }
+        // Ignore a slower response for an older sender message.
+        if (requestNumber !== smartReplyRequestNumber) return;
+        const replies = Array.isArray(data.replies) ? data.replies : [];
+        const distinctReplies = replies
+            .filter(reply => typeof reply === 'string' && reply.trim())
+            .map(reply => reply.trim())
+            .filter((reply, index, allReplies) => allReplies.findIndex(item => item.toLowerCase() === reply.toLowerCase()) === index);
+        renderAIChips(distinctReplies, true);
     })
     .catch(err => console.error("Smart quick replies fetch failed:", err));
 }
@@ -750,12 +819,23 @@ document.addEventListener("DOMContentLoaded", () => {
 function notifyIncomingMessage(messageData) {
   const senderName = messageData.senderName || 'New message';
   const messageText = messageData.text || messageData.message || 'You received a new message';
+    const isPrivateMessage = messageData.type === 'personal' || String(messageData.roomId || '').startsWith('private-');
+    const messageScope = isPrivateMessage ? 'Private message' : 'Global message';
 
 //   showLiveToast(messageText, senderName);
-  renderInAppNotification({ title: senderName, message: messageText });
+    renderInAppNotification({
+                title: `${messageScope} from ${senderName}`,
+        message: messageText,
+        senderId: messageData.senderId,
+                type: isPrivateMessage ? 'personal' : 'group',
+        groupId: messageData.groupId
+    });
 
   if (document.hidden) {
-    showBrowserNotification(senderName, messageText);
+        showBrowserNotification(`${messageScope} from ${senderName}`, messageText, {
+            ...messageData,
+            type: isPrivateMessage ? 'personal' : 'group'
+        });
   }
 
   try {
@@ -797,19 +877,26 @@ function showLiveToast(message, title = 'New message') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-function showBrowserNotification(title, body) {
+function showBrowserNotification(title, body, messageData = {}) {
   if ("Notification" in window && Notification.permission === "granted") {
     // Only trigger browser pop-up if the user is currently on another tab
 
     if (document.hidden) {
       const notification = new Notification(title, {
         body: body,
-        icon: "/images/chat-icon.png" // optional icon path
+                icon: "/groupchatapp_icon.png",
+                badge: "/groupchatapp_icon.png",
+                tag: messageData.type === 'personal' ? `private-${messageData.senderId}` : 'global-message'
       });
 
       notification.onclick = () => {
         window.focus();
         notification.close();
+                if (messageData.type === 'personal' && messageData.senderId) {
+                    openPrivateChatFromNotification(messageData.senderId);
+                } else {
+                    returnToGlobalChat();
+                }
       };
     }
   }
@@ -850,6 +937,16 @@ function renderInAppNotification(data) {
   const toast = document.createElement("div");
   toast.className = "notification-toast";
   toast.innerText = `${data.title || 'New message'}: ${data.message || 'You received a message'}`;
+    toast.style.cursor = 'pointer';
+    toast.title = data.type === 'personal' ? 'Open private chat' : 'Open global chat';
+    toast.addEventListener('click', () => {
+        toast.remove();
+        if (data.type === 'personal' && data.senderId) {
+            openPrivateChatFromNotification(data.senderId);
+        } else {
+            returnToGlobalChat();
+        }
+    });
   toast.style.cssText = `
     position: fixed; top: 20px; right: 20px; 
     background: #ff007f; color: #fff; padding: 12px 20px; 
@@ -882,17 +979,21 @@ async function fetchAndRenderSmartReplies(senderMessageText) {
   if (!senderMessageText || !senderMessageText.trim()) return;
 
   try {
-    const response = await fetch('/api/smart-replies', {
+        const response = await fetch('/chatbord/ai/smart-replies', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${activeSessionToken}`
+            },
       body: JSON.stringify({
-        messageText: senderMessageText
+                incomingText: senderMessageText,
+                tone: 'casual with emojis'
       })
     });
 
     const data = await response.json();
     if (data.replies && data.replies.length > 0) {
-      displaySmartReplyChips(data.replies);
+    showSmartReplyChips(data.replies);
     }
   } catch (err) {
     console.warn('Failed to fetch AI smart replies:', err);

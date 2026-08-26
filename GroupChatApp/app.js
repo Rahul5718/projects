@@ -40,6 +40,10 @@ app.use(router);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/groupchatapp_icon.svg', (req, res) => {
+  res.sendFile(path.join(__dirname, 'view', 'groupchatapp_icon.svg'));
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'view', 'index.html'));
 });
@@ -68,11 +72,12 @@ app.get('/forgotpassword',(req,res)=>{
 
 // Ensure tables exist (dev-friendly). Safe to remove later if you use migrations.
 sequelize
-  .sync({})
+  .sync()
   .then(() => console.log('DB synced'))
   .catch((err) => console.error('DB sync error:', err));
 
-server.listen(3000, () => {
+const PORT = process.env.PORT || 3000
+server.listen(PORT, () => {
   archive()
   console.log('server running on port 3000');
 });
