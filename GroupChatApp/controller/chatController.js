@@ -1,6 +1,6 @@
 // controllers/chatController.js
 const jwt = require('jsonwebtoken');
-const sequelize = require('../util/database');
+const sequelize = require('../util/Database');
 const {QueryTypes, where}= require('sequelize')
 const Message = require('../model/message')
 const { Op } = require('sequelize')
@@ -141,9 +141,19 @@ exports.getChatHistory = async (req, res) => {
             })
         ])
 
-        const combinedUnifiedHistory = [...archivedHistory, ...activeHistory]
+         const combinedUnifiedHistory = [...archivedHistory, ...activeHistory]
+         const senderIds = [...new Set(combinedUnifiedHistory.map(message => message.senderId))]
+         const users = await User.findAll({
+           where: { id: { [Op.in]: senderIds } },
+           attributes: ['id', 'name']
+         })
+         const senderNames = new Map(users.map(user => [user.id, user.name]))
+         const messagesWithSenderNames = combinedUnifiedHistory.map(message => ({
+           ...message.toJSON(),
+           senderName: senderNames.get(message.senderId) || 'User'
+         }))
 
-        return res.status(200).json({ success: true, messages: combinedUnifiedHistory });
+         return res.status(200).json({ success: true, messages: messagesWithSenderNames });
     } catch (err) {
         console.error('Database Extraction Query Fault:', err);
         return res.status(500).json({ success: false, error: 'Internal Server Error' });
@@ -158,29 +168,41 @@ exports.searchUser = async (req, res) => {
             return res.status(400).json({ success: false, message: "Search footprint target is required." });
         }
 
-        // Query the database by email or name
-        const user = await User.findOne({
-            where: {
-                [Op.or]: [
-                    { email: query.trim() },
-                    { name: query.trim() },
-                    ...(Number.isInteger(Number(query.trim())) ? [{ id: Number(query.trim()) }] : [])
-                ]
-            }
+        const searchValue = query.trim();
+        const users = await User.findAll({
+          where: {
+            [Op.or]: [
+              { email: { [Op.like]: `%${searchValue}%` } },
+              { name: { [Op.like]: `%${searchValue}%` } },
+              ...(Number.isInteger(Number(searchValue)) ? [{ id: Number(searchValue) }] : [])
+            ]
+          },
+          attributes: ['id', 'name', 'email'],
+          order: [['name', 'ASC']],
+          limit: 20
         });
 
-        if (!user) {
+        if (users.length === 0) {
             return res.status(404).json({ success: false, message: "User matching footprint was not found." });
         }
 
-        // Return exactly what your frontend structure expects
+        const matchingUsers = [...new Map(users.map(user => [user.id, {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        }])).values()];
+        const normalizedSearchValue = searchValue.toLowerCase();
+        matchingUsers.sort((leftUser, rightUser) => {
+          const leftIsExactEmail = leftUser.email.toLowerCase() === normalizedSearchValue;
+          const rightIsExactEmail = rightUser.email.toLowerCase() === normalizedSearchValue;
+          if (leftIsExactEmail !== rightIsExactEmail) return leftIsExactEmail ? -1 : 1;
+          return leftUser.name.localeCompare(rightUser.name);
+        });
+
         return res.status(200).json({
             success: true,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email
-            }
+          user: matchingUsers[0],
+          users: matchingUsers
         });
 
     } catch (error) {

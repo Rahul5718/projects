@@ -17,7 +17,6 @@
                 </div>
                 <div class="meta-profile-details">
                     <h2 id="displayUserName">Loading Channel...</h2>
-                    <p class="secure-badge">🔒 End-to-End Encryption Secured</p>
                 </div>
             </div>
 
@@ -32,6 +31,7 @@
                 <input type="text" id="emailSearchInputField" placeholder="Enter user's email or exact name..." autocomplete="off">
                 <button type="button" id="initiateRoomSearchBtn" class="search-action-submit">Connect</button>
             </div>
+            <div id="userSearchSuggestions" class="user-search-suggestions" role="listbox"></div>
             <div id="activeChatContextBanner" class="active-context-banner" style="display: none;">
                 <span id="contextStatusText">Chatting with: Global Room</span>
                 <button type="button" onclick="returnToGlobalChat()" class="exit-private-btn">× Leave Direct Chat</button>

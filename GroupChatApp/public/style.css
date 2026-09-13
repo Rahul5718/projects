@@ -908,6 +908,38 @@ td[colspan="6"] {
     gap: 8px;
 }
 
+.user-search-suggestions {
+    display: none;
+    width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    background: rgba(15, 15, 25, 0.96);
+    border: 1px solid rgba(255, 0, 127, 0.35);
+    border-radius: 6px;
+}
+
+.user-search-suggestion {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.user-search-suggestion:hover {
+    background: rgba(255, 0, 127, 0.16);
+}
+
+.user-search-suggestion small {
+    margin-top: 3px;
+    opacity: 0.65;
+}
+
 .search-input-inner {
     display: flex;
     gap: 10px;

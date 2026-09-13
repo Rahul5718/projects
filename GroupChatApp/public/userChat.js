@@ -67,7 +67,7 @@ async function fetchCurrentProfile() {
         });
         if (response.ok) {
             const userData = await response.json();
-            currentUserName = userData.name; // Assign it globally
+            currentUserName = userData.user?.name || userData.name || currentUserName;
         }
     } catch (err) {
         console.error("Failed to fetch current user profile details:", err);
@@ -318,6 +318,9 @@ function appendGroupBubble(message) {
     if (isMe) bubble.style.marginLeft = 'auto';
 
     const senderLabel = isMe ? 'You' : (message.senderName || 'User');
+    const senderLink = !isMe && Number(message.senderId)
+        ? `<a href="#" class="global-sender-link" data-sender-id="${Number(message.senderId)}" style="color:inherit; text-decoration:underline; cursor:pointer;">${escapeHTML(senderLabel)}</a>`
+        : escapeHTML(senderLabel);
     const actualText = message.text || message.message || '';
     const mediaUrl = actualText.startsWith('https://') && actualText.includes('.amazonaws.com/')
         ? normalizeMediaUrl(actualText)
@@ -340,7 +343,7 @@ function appendGroupBubble(message) {
     }
 
     bubble.innerHTML = `
-        <span class="sender-tag" style="font-weight:bold; color:#ff007f; display:block; margin-bottom:2px;">${senderLabel}</span>
+        <span class="sender-tag" style="font-weight:bold; color:#ff007f; display:block; margin-bottom:2px;">${senderLink}</span>
         ${displayBodyContent}
         <span class="time-stamp" style="font-size:10px; opacity:0.6; display:block; text-align:right; margin-top:4px;">
             ${formatDatabaseTimestamp(message.createdAt || new Date())}
@@ -349,6 +352,13 @@ function appendGroupBubble(message) {
 
     if (chatStreamBody) {
         chatStreamBody.appendChild(bubble);
+        const senderLinkElement = bubble.querySelector('.global-sender-link');
+        if (senderLinkElement) {
+            senderLinkElement.addEventListener('click', (event) => {
+                event.preventDefault();
+                openPrivateChatFromNotification(senderLinkElement.dataset.senderId);
+            });
+        }
         chatStreamBody.scrollTop = chatStreamBody.scrollHeight;
     }
 }
@@ -447,6 +457,60 @@ function toggleSearchTray() {
     }
 }
 
+let userSearchDebounceTimer;
+
+function renderUserSearchSuggestions(users) {
+    const suggestions = document.getElementById('userSearchSuggestions');
+    if (!suggestions) return;
+
+    suggestions.innerHTML = '';
+    if (!users || users.length === 0) {
+        suggestions.style.display = 'none';
+        return;
+    }
+
+    users.forEach(user => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'user-search-suggestion';
+        option.innerHTML = `<strong>${escapeHTML(user.name)}</strong><small>${escapeHTML(user.email)}</small>`;
+        option.addEventListener('click', () => {
+            const searchField = document.getElementById('emailSearchInputField');
+            if (searchField) searchField.value = user.name;
+            suggestions.innerHTML = '';
+            suggestions.style.display = 'none';
+            openPrivateChatFromNotification(user.id);
+        });
+        suggestions.appendChild(option);
+    });
+    suggestions.style.display = 'block';
+}
+
+const userSearchField = document.getElementById('emailSearchInputField');
+if (userSearchField) {
+    userSearchField.addEventListener('input', () => {
+        clearTimeout(userSearchDebounceTimer);
+        const queryValue = userSearchField.value.trim();
+        if (queryValue.length < 2) {
+            renderUserSearchSuggestions([]);
+            return;
+        }
+
+        userSearchDebounceTimer = setTimeout(async () => {
+            try {
+                const response = await fetch(`http://localhost:3000/chatbord/searchUser?query=${encodeURIComponent(queryValue)}`, {
+                    headers: { 'Authorization': `Bearer ${activeSessionToken}` }
+                });
+                const result = await response.json();
+                renderUserSearchSuggestions(response.ok ? result.users || [] : []);
+            } catch (error) {
+                console.error('User search suggestions failed:', error);
+                renderUserSearchSuggestions([]);
+            }
+        }, 250);
+    });
+}
+
 window.connectToUserBySearchPayload = async function() {
     const searchField = document.getElementById('emailSearchInputField');
     const contextBanner = document.getElementById('activeChatContextBanner');
@@ -481,6 +545,7 @@ window.connectToUserBySearchPayload = async function() {
         }
 
         const targetedPeer = result.user;
+        renderUserSearchSuggestions([]);
         
     
         activeTargetPartnerId = Number(targetedPeer.id)
@@ -615,8 +680,6 @@ if(rawMessageInputField){
         }, 1500);
     })
 }
-
-
 
 const attachButton = document.getElementById('attach-btn');
 if (attachButton) {
