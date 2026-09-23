@@ -6,7 +6,8 @@ exports.getProducts = async (req, res, next) => {
   try {
     const products = await Product.fetchAll();
 
-    const productHtml = products.map(product => `
+    const visibleProducts = products.filter(product => product.title);
+    const productHtml = visibleProducts.map(product => `
       <div class="product-card" style="border:1px solid #ddd; padding:12px; margin:12px 0;">
         <h3>${product.title}</h3>
         <p>${product.description}</p>
@@ -125,6 +126,10 @@ exports.getCartData = async (req, res, next) => {
 
 // Delete a product from the cart
 exports.postCartDeleteProduct = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'No user found.' });
+  }
+
   const prodId = req.body.productId;
   if (!prodId) {
     return res.status(400).json({ message: 'Product ID is required.' });
@@ -144,6 +149,10 @@ exports.postCartDeleteProduct = (req, res, next) => {
 };
 
 exports.postClearCart = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).send('No user found.');
+  }
+
   const user = new User(req.user.name, req.user.email, req.user.cart, req.user._id);
   user
     .clearCart()
@@ -158,20 +167,29 @@ exports.postOrder = (req, res, next) => {
   user
     .addOrder()
     .then(result => {
-      console.log('Order placed successfully!');
       res.redirect('/orders');
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      console.log(err);
+      res.status(500).send('Failed to place order.');
+    });
 };
+exports.getOrdersPage = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).send('No user found.');
+  }
+  res.sendFile(path.join(__dirname, '../views/orders.html'));
+};
+exports.getOrdersData = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'No user found.' });
+  }
 
-exports.getOrders = (req, res, next) => {
-  User.getOrders(req.user._id)
-    .then(orders => {
-      // Console log all orders of the user as requested
-      console.log('--- USER ORDERS ---', orders);
-      
-      // If returning JSON for a frontend view or rendering
-      res.status(200).json(orders);
-    })
-    .catch(err => console.log(err));
+  try {
+    const orders = await User.getOrders(req.user._id);
+    res.json(orders);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'Unable to fetch orders.' });
+  }
 };

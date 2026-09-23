@@ -18,9 +18,11 @@ async function loadCart() {
         products.forEach(p => {
             const prod = p.productId || {};
             const title = prod.title || 'Unknown Product';
-            const price = prod.price ? prod.price.toFixed(2) : '0.00';
+            const price = Number(prod.price || 0).toFixed(2);
             const quantity = p.quantity || 1;
-            const prodId = prod._id || '';
+            const prodId = String(prod._id || '');
+
+            if (!prodId) return;
 
             html += `
                 <li class="cart__item" data-id="${prodId}">

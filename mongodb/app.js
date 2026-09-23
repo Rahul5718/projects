@@ -4,6 +4,7 @@ const path = require('path');
 const { mongoConnect } = require('./util/database');
 
 const app = express();
+const port = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -34,7 +35,7 @@ mongoConnect(() => {
 
   app.use(shopRoutes);
 
-  app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
   });
 });

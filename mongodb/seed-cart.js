@@ -1,22 +1,22 @@
 const { MongoClient } = require('mongodb');
 
 const userId = '6ab36fea837dbacfb99a22b6';
-const productId = '6ab36d65837dbacfb99a22b5';
 
 MongoClient.connect('mongodb://localhost:27017')
   .then(async (client) => {
     const db = client.db('mydb');
-    const product = await db.collection('products').findOne({ _id: productId });
+    const legacyUser = await db.collection('products').findOne({ _id: userId, cart: { $exists: true } });
+    const product = await db.collection('products').findOne({ title: { $exists: true } });
 
     if (!product) {
-      console.log('No product found for the current cart item.');
+      console.log('No product found in the products collection.');
       client.close();
       process.exit(1);
     }
 
     const cartItem = {
-      productId: productId,
-      quantity: 1
+      productId: product._id.toString(),
+      quantity: legacyUser?.cart?.items?.[0]?.quantity || 1
     };
 
     await db.collection('users').updateOne(

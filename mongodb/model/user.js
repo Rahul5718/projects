@@ -21,20 +21,23 @@ class User {
   getCart() {
     const db = getDb();
     const cartItems = this.cart && this.cart.items ? this.cart.items : [];
-    const productIds = cartItems.map(i => i.productId);
 
     return db
       .collection('products')
-      .find({ _id: { $in: productIds } })
+      .find({ title: { $exists: true } })
       .toArray()
       .then(products => {
-        return products.map(p => {
-          const cartItem = cartItems.find(i => i.productId.toString() === p._id.toString());
-          return {
-            ...p,
-            quantity: cartItem ? cartItem.quantity : 0
-          };
-        });
+        return cartItems
+          .map(item => {
+            const product = products.find(p => normalizeId(p._id) === normalizeId(item.productId));
+            if (!product) return null;
+
+            return {
+              ...product,
+              quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1
+            };
+          })
+          .filter(Boolean);
       });
   }
 
@@ -42,6 +45,13 @@ class User {
     const db = getDb();
     const cartItems = this.cart && this.cart.items ? this.cart.items : [];
     const normalizedProductId = normalizeId(productId);
+
+    return db.collection('products').findOne({ _id: normalizedProductId, title: { $exists: true } })
+      .then(product => {
+        if (!product) {
+          throw new Error('Product not found.');
+        }
+
     const existingItemIndex = cartItems.findIndex(item => normalizeId(item.productId) === normalizedProductId);
 
     if (existingItemIndex >= 0) {
@@ -52,12 +62,11 @@ class User {
 
     this.cart = { items: cartItems };
 
-    return db
-      .collection('users')
-      .updateOne(
-        { _id: this._id },
-        { $set: { cart: { items: cartItems } } }
-      );
+        return db.collection('users').updateOne(
+          { _id: this._id },
+          { $set: { cart: { items: cartItems } } }
+        );
+      });
   }
 
   // Delete product from cart using the filter hint
@@ -87,19 +96,9 @@ class User {
 
   static findById(userId) {
     const db = getDb();
-    const queryId = typeof userId === 'string' ? userId : new ObjectId(userId);
-
     return db
       .collection('users')
-      .findOne({ _id: queryId })
-      .then(user => {
-        if (user) return user;
-
-        return db
-          .collection('products')
-          .findOne({ _id: queryId, cart: { $exists: true } })
-          .then(productUser => productUser || null);
-      })
+      .findOne({ _id: userId })
       .catch(err => {
         console.log(err);
         return null;
@@ -129,13 +128,11 @@ class User {
           );
       });
   }
-
   static getOrders(userId) {
     const db = getDb();
-    const queryId = typeof userId === 'string' ? userId : new ObjectId(userId);
     return db
       .collection('orders')
-      .find({ 'user._id': queryId })
+      .find({ 'user._id': userId })
       .toArray();
   }
 

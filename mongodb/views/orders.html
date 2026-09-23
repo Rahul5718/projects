@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Orders</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Shop</a></li>
+                <li><a href="/cart">Cart</a></li>
+                <li><a href="/orders" class="active">Orders</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Your Orders</h1>
+        <div id="orders-container">
+            <p>Loading your orders...</p>
+        </div>
+    </main>
+
+    <script>
+        async function loadOrders() {
+            const container = document.getElementById('orders-container');
+            try {
+                const response = await fetch('/orders-data');
+                if (!response.ok) throw new Error('Failed to fetch orders');
+
+                const orders = await response.json();
+
+                if (!orders || orders.length === 0) {
+                    container.innerHTML = '<h2>You have placed no orders yet!</h2>';
+                    return;
+                }
+
+                let html = '<ul class="orders__list" style="list-style: none; padding: 0;">';
+                orders.forEach(order => {
+                    html += `
+                        <li style="background: #fff; padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <h2 style="font-size: 1.2rem; color: #007bff; margin-bottom: 0.8rem;">Order ID: ${order._id}</h2>
+                            <ul style="list-style: none; padding-left: 1rem;">
+                    `;
+                    order.items.forEach(item => {
+                        html += `<li style="margin-bottom: 0.4rem; color: #555;">${item.title} (${item.quantity}) - $${item.price}</li>`;
+                    });
+                    html += `
+                            </ul>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p style="color: red;">Failed to load orders.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadOrders);
+    </script>
+</body>
+</html>
