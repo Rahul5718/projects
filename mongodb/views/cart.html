@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Shop</a></li>
+                <li><a href="/cart" class="active">Cart</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Your Shopping Cart</h1>
+        <div id="cart-container">
+            <p>Loading cart items...</p>
+        </div>
+    </main>
+
+    <script>
+        // Fetch cart data dynamically using vanilla JavaScript
+        async function loadCart() {
+            try {
+                const response = await fetch('/cart-data');
+                const products = await response.json();
+                
+                const container = document.getElementById('cart-container');
+                
+                if (products.length === 0) {
+                    container.innerHTML = '<h2>No Products in Cart!</h2>';
+                    return;
+                }
+
+                let html = '<ul class="cart__item-list">';
+                products.forEach(p => {
+                    // Check if productId is populated properly
+                    const prod = p.productId || {};
+                    html += `
+                        <li class="cart__item">
+                            <h2>${prod.title || 'Product'}</h2>
+                            <p>Quantity: ${p.quantity}</p>
+                            <p>Price: $${prod.price || 0}</p>
+                            <form action="/cart-delete-item" method="POST">
+                                <input type="hidden" value="${prod._id}" name="productId">
+                                <button class="btn danger" type="submit">Delete</button>
+                            </form>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Failed to load cart data:', err);
+                document.getElementById('cart-container').innerHTML = '<p>Error loading cart items.</p>';
+            }
+        }
+
+        // Load cart on page initialization
+        loadCart();
+    </script>
+</body>
+</html>
