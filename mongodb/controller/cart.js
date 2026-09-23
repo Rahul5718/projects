@@ -1,45 +1,32 @@
 const User = require('../model/user');
-const Product = require('../model/product');
 const path = require('path');
 
-// Get and display cart items (rendering raw HTML)
+// Get and display cart page
 exports.getCart = (req, res, next) => {
   if (!req.user) {
     return res.status(401).send('No user found. Please log in or create a valid user in MongoDB.');
   }
-
-  req.user
-    .populate('cart.items.productId')
-    .then(user => {
-      const products = user.cart && user.cart.items ? user.cart.items : [];
-
-      res.sendFile(path.join(__dirname, '../views/cart.html'));
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).send('Unable to load cart.');
-    });
+  res.sendFile(path.join(__dirname, '../views/cart.html'));
 };
 
-// API endpoint or route to fetch cart data for client-side JS
+// API endpoint to fetch cart JSON data for client-side JS
 exports.getCartData = async (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'No user found. Please log in or create a valid user in MongoDB.' });
+    return res.status(401).json({ message: 'No user found.' });
   }
 
   try {
-    const user = await req.user.populate('cart.items.productId');
-    let items = user.cart && user.cart.items ? user.cart.items : [];
+    // Instantiate User using native data from middleware
+    const user = new User(req.user.name, req.user.email, req.user.cart, req.user._id);
+    const products = await user.getCart();
 
-    if (!items.length) {
-      const products = await Product.find({}).lean();
-      items = products.map(product => ({
-        productId: product,
-        quantity: 1
-      }));
-    }
+    // Format to match what frontend JS expects
+    const formattedItems = products.map(p => ({
+      productId: p,
+      quantity: p.quantity
+    }));
 
-    res.json(items);
+    res.json(formattedItems);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: 'Unable to load cart data.' });
@@ -48,19 +35,49 @@ exports.getCartData = async (req, res, next) => {
 
 // Delete a product from the cart
 exports.postCartDeleteProduct = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'No user found. Please log in or create a valid user in MongoDB.' });
-  }
-
   const prodId = req.body.productId;
-
-  req.user
-    .removeFromCart(prodId)
+  const user = new User(req.user.name, req.user.email, req.user.cart, req.user._id);
+  
+  user
+    .deleteItemFromCart(prodId)
     .then(result => {
-      res.redirect('/cart');
+      res.status(200).json({ message: 'Deleted successfully!' });
     })
     .catch(err => {
       console.log(err);
-      res.status(500).json({ message: 'Unable to remove item from cart.' });
+      res.status(500).json({ message: 'Deleting failed.' });
     });
+};
+
+exports.postClearCart = (req, res, next) => {
+  const user = new User(req.user.name, req.user.email, req.user.cart, req.user._id);
+  user
+    .clearCart()
+    .then(result => {
+      res.redirect('/cart');
+    })
+    .catch(err => console.log(err));
+};
+
+exports.postOrder = (req, res, next) => {
+  const user = new User(req.user.name, req.user.email, req.user.cart, req.user._id);
+  user
+    .addOrder()
+    .then(result => {
+      console.log('Order placed successfully!');
+      res.redirect('/orders');
+    })
+    .catch(err => console.log(err));
+};
+
+exports.getOrders = (req, res, next) => {
+  User.getOrders(req.user._id)
+    .then(orders => {
+      // Console log all orders of the user as requested
+      console.log('--- USER ORDERS ---', orders);
+      
+      // If returning JSON for a frontend view or rendering
+      res.status(200).json(orders);
+    })
+    .catch(err => console.log(err));
 };
