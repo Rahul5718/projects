@@ -126,6 +126,10 @@ exports.getCartData = async (req, res, next) => {
 // Delete a product from the cart
 exports.postCartDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
+  if (!prodId) {
+    return res.status(400).json({ message: 'Product ID is required.' });
+  }
+
   const user = new User(req.user.name, req.user.email, req.user.cart, req.user._id);
   
   user

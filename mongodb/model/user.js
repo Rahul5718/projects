@@ -62,10 +62,11 @@ class User {
 
   // Delete product from cart using the filter hint
   deleteItemFromCart(productId) {
+    const db = getDb();
     const cartItems = this.cart && this.cart.items ? this.cart.items : [];
     const normalizedProductId = normalizeId(productId);
     const updatedCartItems = cartItems.filter(item => normalizeId(item.productId) !== normalizedProductId);
-    const db = getDb();
+
     return db
       .collection('users')
       .updateOne(
@@ -87,12 +88,21 @@ class User {
   static findById(userId) {
     const db = getDb();
     const queryId = typeof userId === 'string' ? userId : new ObjectId(userId);
+
     return db
       .collection('users')
       .findOne({ _id: queryId })
-      .then(user => user)
+      .then(user => {
+        if (user) return user;
+
+        return db
+          .collection('products')
+          .findOne({ _id: queryId, cart: { $exists: true } })
+          .then(productUser => productUser || null);
+      })
       .catch(err => {
         console.log(err);
+        return null;
       });
   }
 
@@ -128,6 +138,7 @@ class User {
       .find({ 'user._id': queryId })
       .toArray();
   }
+
 }
 
 module.exports = User;
