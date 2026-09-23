@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
       hiddenInput.value = requestId;
     } else {
       alert('Invalid or missing authentication token link. Please request a new email.');
-      window.location.href = '/forgotpassword.html';
+      window.location.href = '/user/forgotpassword';
       return;
     }
 

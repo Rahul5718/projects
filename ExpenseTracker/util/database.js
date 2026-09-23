@@ -1,40 +1,30 @@
-const {Sequelize} = require('sequelize');
-const mysql = require('mysql2/promise');
-const databaseName = 'expense';
+const { MongoClient } = require('mongodb');
 
-async function ensureDatabaseExists() {
-    try {
-        const connection = await mysql.createConnection({
-            host: 'localhost',
-            user: 'root',
-            password: 'Rahul@123'
-        });
-        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\`;`);
-        console.log(`Database "${databaseName}" checked/created successfully.`);
-        await connection.end();
-    } catch (error) {
-        console.error('Error creating database:', error);
-    }
+const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/expense';
+const databaseName = process.env.MONGO_DATABASE || 'expense';
+let client;
+let db;
+
+async function connectDatabase() {
+    if (db) return db;
+
+    client = new MongoClient(uri);
+    await client.connect();
+    db = client.db(databaseName);
+    console.log(`Connected to MongoDB database "${databaseName}".`);
+    return db;
 }
 
-const sequelize = new Sequelize('expense','root','Rahul@123', {
-    dialect: 'mysql',
-    host: '127.0.0.1',
-    port:3306
-   
-});
+function getDb() {
+    if (!db) throw new Error('MongoDB is not connected.');
+    return db;
+}
 
-(async ()=>{
-     try {
-          await ensureDatabaseExists();
-          await sequelize.authenticate();
-          console.log("connection has been created");
-          
-     } catch (error) {
-          console.log(error);
-          
-     }
-})();
+async function closeDatabase() {
+    if (client) await client.close();
+    client = undefined;
+    db = undefined;
+}
 
-module.exports=sequelize
+module.exports = { connectDatabase, getDb, closeDatabase };
 

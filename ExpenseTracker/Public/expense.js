@@ -24,7 +24,7 @@ async function handleRegisterSubmit(event){
 
 
 
-          const response = await axios.post('http://localhost:3000/user/register', formData);
+          const response = await axios.post('/user/register', formData);
 
           if (response.status === 201) {
 
@@ -64,7 +64,7 @@ async function handleLoginSubmit(event){
 
 
 
-          const response = await axios.post('http://localhost:3000/user/login', formData);
+          const response = await axios.post('/user/login', formData);
 
           if (response.status === 200) {
 
@@ -307,7 +307,7 @@ async function fetchCurrentUser() {
 
 
 
-        const response = await axios.get('http://localhost:3000/user/me', {
+        const response = await axios.get('/user/me', {
 
             headers: { Authorization: `Bearer ${token}` }
 
@@ -425,7 +425,7 @@ async function fetchExpenses(page = 1) {
 
         const response = await axios.get(
 
-            `http://localhost:3000/expenses/getexpenses?page=${page}&limit=${limit}`,
+            `/expenses/getexpenses?page=${page}&limit=${limit}`,
 
             {
 
@@ -481,7 +481,7 @@ if (userExpenseBtn) {
             const token = localStorage.getItem('token');
             
             // Query our newly declared backend overview endpoint
-            const response = await axios.get('http://localhost:3000/user/expense-summary', {
+            const response = await axios.get('/user/expense-summary', {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -535,7 +535,7 @@ if (expenseForm) {
 
         const type = document.getElementById('transactionType').value;
 
-        const response = await axios.post('http://localhost:3000/expenses/addexpense',
+        const response = await axios.post('/expenses/addexpense',
             { amount, description, category,type }, {
 
             headers: { Authorization: `Bearer ${token}` }
@@ -606,7 +606,7 @@ function renderExpenseOnWindow(expense) {
 
             const token = localStorage.getItem('token');
 
-            await axios.delete(`http://localhost:3000/expenses/delete/${expense.id}`, {
+            await axios.delete(`/expenses/delete/${expense.id}`, {
 
                 headers: { "Authorization": `Bearer ${token}` }
 
@@ -635,7 +635,7 @@ async function handleBuyPremium() {
 
         const token = localStorage.getItem('token');
 
-        const response = await axios.get('http://localhost:3000/premium/membership', {
+        const response = await axios.get('/premium/membership', {
 
             headers: { Authorization: `Bearer ${token}` }
 
@@ -691,7 +691,7 @@ async function handleDownloadExpenses() {
         }
 
         // 1. Fetch the pre-signed S3 URL from your backend controller
-        const response = await axios.get(`http://localhost:3000/expenses/download${queryParams}`, {
+        const response = await axios.get(`/expenses/download${queryParams}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -738,14 +738,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 })
 
-document.getElementById('downloadRangeType').addEventListener('change', (e) => {
-    const customDateWrapper = document.getElementById('customDateWrapper');
-    if (e.target.value === 'custom') {
-        customDateWrapper.style.display = 'block';
-    } else {
-        customDateWrapper.style.display = 'none';
-    }
-})
+const downloadRangeType = document.getElementById('downloadRangeType');
+if (downloadRangeType) {
+    downloadRangeType.addEventListener('change', (e) => {
+        const customDateWrapper = document.getElementById('customDateWrapper');
+        if (!customDateWrapper) return;
+
+        customDateWrapper.style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
+}
 
 async function checkPaymentResult() {
 
@@ -807,7 +808,7 @@ async function handleDownloadExpenseHistory() {
             return;
         }
 
-        const response = await axios.get('http://localhost:3000/expenses/download-history', {
+        const response = await axios.get('/expenses/download-history', {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -898,7 +899,7 @@ async function fetchLeaderboard() {
 
         const token = localStorage.getItem('token');
 
-        const response = await axios.get('http://localhost:3000/premium/leaderboard', {
+        const response = await axios.get('/premium/leaderboard', {
 
             headers: { Authorization: `Bearer ${token}` }
 
@@ -960,7 +961,7 @@ async function fetchExpenseSummary() {
 
         const token = localStorage.getItem('token');
 
-        const response = await axios.get('http://localhost:3000/expenses/summary', {
+        const response = await axios.get('/expenses/summary', {
 
             headers: { Authorization: `Bearer ${token}` }
 
@@ -1026,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (response.status === 200) {
           alert('Password reset successfully. Redirecting to login page...');
-          window.location.href = '/login'; // Redirects user back to login 
+          window.location.href = '/user/login'; // Redirects user back to login 
         }
       } catch (err) {
         console.error('Error submitting reset password form:', err);

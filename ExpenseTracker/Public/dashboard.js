@@ -19,12 +19,12 @@ async function fetchExpenses() {
         expenseList.innerHTML = '';
         
         const token = localStorage.getItem('token')
-        const response = await axios.get('http://localhost:3000/expenses/getexpenses', {
+        const response = await axios.get('/expenses/getexpenses', {
             headers: {
                 "Authorization": `Bearer ${token}`
             }
         });
-        const expenses = response.data;
+        const expenses = Array.isArray(response.data) ? response.data : response.data.expenses || [];
 
         expenses.forEach(expense => {
             renderExpenseOnWindow(expense);
@@ -46,7 +46,7 @@ expenseForm.addEventListener('submit', async (event) => {
 
         const expenseData = { amount, description, category };
 
-        const response = await axios.post('http://localhost:3000/expenses/addexpense', expenseData, {
+        const response = await axios.post('/expenses/addexpense', expenseData, {
             headers: {
                 "Authorization": `Bearer ${token}`
             }
@@ -90,7 +90,7 @@ function renderExpenseOnWindow(expense) {
         try{
             
             const token = localStorage.getItem('token')
-            const response = await axios.delete(`http://localhost:3000/expenses/delete/${expense.id}`, {
+            const response = await axios.delete(`/expenses/delete/${expense.id}`, {
                 headers: {
                     "Authorization": `Bearer ${token}`
                 }
@@ -128,7 +128,7 @@ async function handleBuyPremium() {
             return;
         }
 
-        const response = await axios.get('http://localhost:3000/premium/membership', {
+        const response = await axios.get('/premium/membership', {
             headers: {
                 Authorization: `Bearer ${token}`
             }

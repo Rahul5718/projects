@@ -18,16 +18,12 @@
      
 </body>
 <script>
-            const cashfree = Cashfree({
-                mode: "sandbox",
-            });
-            document.getElementById("renderBtn").addEventListener("click", () => {
-                let checkoutOptions = {
-                    paymentSessionId: "session__CvcEmNKDkmERQrxnx39ibhJ3Ii034pjc8ZVxf3qcgEXCWlgDDlHRgz2XYZCqpajDQSXMMtCusPgOIxYP2LZx0-05p39gC2Vgmq1RAj--gcn",
-                    redirectTarget: "_self",
-                };
-                cashfree.checkout(checkoutOptions);
-            });
+            const signupButton = document.getElementById("signupButton");
+            if (signupButton) {
+                signupButton.addEventListener("click", () => {
+                    window.location.href = "/user/register";
+                });
+            }
         </script>
 <script type="module" src="/expense.js"></script>
 </html>

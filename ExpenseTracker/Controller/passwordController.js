@@ -1,4 +1,6 @@
-// Controller/passwordController.js
+const bcrypt = require('bcrypt');
+const User = require('../Model/UserdataSetCreation');
+const ForgotPasswordRequest = require('../Model/forgotPassword');
 
 exports.verifyResetLink = async (req, res) => {
     try {

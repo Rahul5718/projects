@@ -1,41 +1,25 @@
-const { Sequelize } = require('sequelize');
-const sequelize = require('../util/database');
+const { getDb } = require('../util/database');
 
-const PremiumLeader = sequelize.define('premiumLeader', {
-    id: {
-        type: Sequelize.INTEGER,
-        autoIncrement: true,
-        allowNull: false,
-        primaryKey: true
-    },
-    name: {
-        type: Sequelize.STRING,
-        allowNull: false
-    },
-    totalExpenses: {
-        type: Sequelize.INTEGER,
-        defaultValue: 0
-    },
-    userId: {
-        type: Sequelize.INTEGER,
-        allowNull: false
-    },
-    // premium download tracking
-    lastExpenseDownloadAt: {
-        type: Sequelize.DATE,
-        allowNull: true
-    },
-    expenseDownloadCount: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        defaultValue: 0
-    },
-    // JSON stringified array of ISO timestamps: ["2026-...Z", ...]
-    expenseDownloadHistory: {
-        type: Sequelize.TEXT,
-        allowNull: true
+class PremiumLeader {
+    static async findOne(options = {}) {
+        return getDb().collection('premiumLeaders').findOne(options.where || options);
     }
-});
+
+    static async create(data) {
+        const record = { ...data, createdAt: new Date(), updatedAt: new Date() };
+        const result = await getDb().collection('premiumLeaders').insertOne(record);
+        return { ...record, _id: result.insertedId };
+    }
+
+    async update(values) {
+        await getDb().collection('premiumLeaders').updateOne(
+            { _id: this._id },
+            { $set: { ...values, updatedAt: new Date() } }
+        );
+        Object.assign(this, values);
+        return this;
+    }
+}
 
 module.exports = PremiumLeader;
 

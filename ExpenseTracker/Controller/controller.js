@@ -4,15 +4,10 @@ const ForgotPasswordRequest = require('../Model/forgotPassword')
 const { generateExpenseSummary } = require('../services/genaiService')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const sequelize = require('../util/database')
 const genaiService = require('../services/genaiService');
-const {Sequelize} = require('sequelize')
 const { uploadCsvAndGetPresignedUrl }=require('../util/s3UploadCsv')
-const {Op} = require('sequelize')
 
 // mongoose connection
-
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const JWT_SECRET = process.env.JWT_SECRET || '987456321'
 
@@ -96,7 +91,9 @@ exports.getCurrentUser = async (req, res) => {
                email: user.email,
                phn: user.phn,
                isPremiumUser: user.isPremiumUser,
-               totalExpenses: user.totalExpenses || 0
+               totalExpenses: user.totalExpenses || user.totalExpenditure || 0,
+               totalExpenditure: user.totalExpenditure || user.totalExpenses || 0,
+               totalCredits: user.totalCredits || 0
           });
      } catch (error) {
           console.error('Error fetching current user:', error);
@@ -218,7 +215,8 @@ exports.downloadExpenses = async (req, res) => {
         const userId = req.user.id;
         const {rangeType , startDate, endDate}=req.query
 
-        let whereClause = {userId}
+     let startDateFilter;
+     let endDateFilter;
 
         const now = new Date()
         let start = new Date()
@@ -227,30 +225,37 @@ exports.downloadExpenses = async (req, res) => {
         if (rangeType === 'daily') {
             start.setHours(0, 0, 0, 0);
             end.setHours(23, 59, 59, 999);
-            whereClause.createdAt = { [Op.between]: [start, end] };
+            startDateFilter = start;
+            endDateFilter = end;
         } 
         else if (rangeType === 'monthly') {
             start = new Date(now.getFullYear(), now.getMonth(), 1);
             end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-            whereClause.createdAt = { [Op.between]: [start, end] };
+            startDateFilter = start;
+            endDateFilter = end;
         } 
         else if (rangeType === 'yearly') {
             start = new Date(now.getFullYear(), 0, 1);
             end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-            whereClause.createdAt = { [Op.between]: [start, end] };
+            startDateFilter = start;
+            endDateFilter = end;
         } 
         else if (rangeType === 'custom' && startDate && endDate) {
             start = new Date(startDate);
             start.setHours(0, 0, 0, 0);
             end = new Date(endDate);
             end.setHours(23, 59, 59, 999);
-            whereClause.createdAt = { [Op.between]: [start, end] };
+            startDateFilter = start;
+            endDateFilter = end;
         }
         // Fetch rows
-        const expenses = await Expense.findAll({
-            where: whereClause,
-            order: [['createdAt', 'DESC']]
-        });
+          let expenses = await Expense.findAll({ where: { userId } });
+          if (startDateFilter && endDateFilter) {
+               expenses = expenses.filter(expense => {
+                    const date = new Date(expense.createdAt);
+                    return date >= startDateFilter && date <= endDateFilter;
+               });
+          }
 
         if (expenses.length === 0) {
             return res.status(404).json({ error: 'No data records found for the selected date range filter.' });
@@ -345,15 +350,12 @@ exports.downloadExpenseHistory = async (req, res) => {
 }
 
 exports.addExpense = async (req, res) => {
-
-     const t = await sequelize.transaction();
      try {
 
           const { amount, description, category ,type} = req.body;
           const userId = req.user.id;
 
           if (!amount || !description) {
-               await t.rollback()
                return res.status(400).json({ error: 'Amount and description are required' });
           }
 
@@ -361,7 +363,6 @@ exports.addExpense = async (req, res) => {
           const user = await User.findByPk(userId);
 
           if (!user) {
-              await t.rollback();
               return res.status(404).json({ error: 'User not found' });
           }
 
@@ -375,7 +376,6 @@ exports.addExpense = async (req, res) => {
                     userId,
                     type:transactionType
                },
-               { transaction: t }
           );
 
           // let updatedTotal 
@@ -384,19 +384,20 @@ exports.addExpense = async (req, res) => {
                const currentCredits = Number(user.totalCredits) || 0;
                const updatedCredits = currentCredits + Number(amount);
                
-               await user.update({ totalCredits: updatedCredits }, { transaction: t });
+               await user.update({ totalCredits: updatedCredits });
           } else {
                const currentExpenditure = Number(user.totalExpenditure) || 0;
                const updatedExpenditure = currentExpenditure + Number(amount);
                
-               await user.update({ totalExpenditure: updatedExpenditure }, { transaction: t });
+               await user.update({
+                    totalExpenditure: updatedExpenditure,
+                    totalExpenses: Number(user.totalExpenses || 0) + Number(amount)
+               });
           }
           // await user.update({ totalExpenses: updatedTotal }, { transaction: t });
 
-          await t.commit();
           res.status(201).json(newExpense);
      } catch (error) {
-          await t.rollback();
           console.error('Error occurred while adding expense:', error);
           res.status(500).send('Internal Server Error');
      }
@@ -404,30 +405,37 @@ exports.addExpense = async (req, res) => {
 
 exports.delete = async (req,res,next)=>{
      const expenseId = req.params.id
-     const t = await sequelize.transaction()
      try{
           const expense = await Expense.findByPk(expenseId)
 
           if(!expense){
-               await t.rollback();
                return res.status(404).json({success:false,message:'Expense not found'})
+          }
+
+          if (String(expense.userId) !== String(req.user.id)) {
+               return res.status(403).json({ success: false, message: 'You cannot delete this expense' });
           }
 
           const user = await User.findByPk(req.user.id);
           if (!user) {
-               await t.rollback();
                return res.status(404).json({ success:false, message:'User not found' })
           }
 
-          const updatedTotal = Number(user.totalExpenses || 0) - Number(expense.amount);
-          await user.update({ totalExpenses: updatedTotal }, { transaction: t });
+          if (expense.type === 'credit') {
+               await user.update({
+                    totalCredits: Math.max(0, Number(user.totalCredits || 0) - Number(expense.amount))
+               });
+          } else {
+               await user.update({
+                    totalExpenditure: Math.max(0, Number(user.totalExpenditure || 0) - Number(expense.amount)),
+                    totalExpenses: Math.max(0, Number(user.totalExpenses || 0) - Number(expense.amount))
+               });
+          }
 
-          await expense.destroy({ transaction: t });
-          await t.commit();
+          await expense.destroy();
           res.status(200).json({success:true,message:'Expense deleted successfully'})
      }
      catch(error){
-          await t.rollback();
           console.error('Error occurred while deleting expense:', error);
           res.status(500).json({success:false,message:'Internal Server Error'})
      }
@@ -486,32 +494,22 @@ const UserExpense = require('../Model/userExpense');
 
 exports.getUserExpenseSummary = async (req, res) => {
     try {
-        // Query the primary expense dataset dynamically using Sequelize extraction functions
-
-        const reports = await Expense.findAll({
-            where: { userId: req.user.id }, // Make sure to target only the logged-in user
-            attributes: [
-                // Extract Year and Month strings directly from MySQL 'createdAt' column
-
-                [Sequelize.fn('YEAR', Sequelize.col('createdAt')), 'year'],
-                [Sequelize.fn('MONTHNAME', Sequelize.col('createdAt')), 'month'],
-
-                // Sum up expenditures (assuming your column name is 'amount')
-
-               [Sequelize.literal("SUM(CASE WHEN LOWER(type) = 'expense' THEN amount ELSE 0 END)"), 'totalExpenditure'],
-               [Sequelize.literal("SUM(CASE WHEN LOWER(type) = 'credit' THEN amount ELSE 0 END)"), 'totalCredit']
-            ],
-            // Group the data by year and month so it combines matching rows
-            group: [
-                Sequelize.fn('YEAR', Sequelize.col('createdAt')), 
-                Sequelize.fn('MONTHNAME', Sequelize.col('createdAt'))
-            ],
-            order: [
-                [Sequelize.fn('YEAR', Sequelize.col('createdAt')), 'DESC'],
-                [Sequelize.fn('MONTHNAME', Sequelize.col('createdAt')), 'ASC']
-            ],
-            raw: true // Ensures we get a pure JavaScript array block back
+          const expenses = await Expense.findAll({ where: { userId: req.user.id } });
+          const reportsByMonth = new Map();
+          expenses.forEach(expense => {
+               const date = new Date(expense.createdAt);
+               const key = `${date.getFullYear()}-${date.getMonth()}`;
+               const current = reportsByMonth.get(key) || {
+                    year: date.getFullYear(),
+                    month: date.toLocaleString('en-US', { month: 'long' }),
+                    totalExpenditure: 0,
+                    totalCredit: 0
+               };
+               if (expense.type === 'credit') current.totalCredit += Number(expense.amount || 0);
+               else current.totalExpenditure += Number(expense.amount || 0);
+               reportsByMonth.set(key, current);
           });
+          const reports = Array.from(reportsByMonth.values()).sort((a, b) => b.year - a.year || a.month.localeCompare(b.month));
 
         // Calculate the aggregate yearly total expenditures from your combined array rows
         let yearlyExpenditure = 0;

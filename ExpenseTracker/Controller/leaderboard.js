@@ -1,24 +1,15 @@
 const User = require('../Model/UserdataSetCreation');
 const Expense = require('../Model/expenseDataset');
-const Order = require('../Model/order');
-const sequelize = require('../util/database');
 
 exports.getUserLeaderboard = async (req, res) => {
     try {
-        // Fetch all users alongside their summed aggregate expense values
-        const leaderboardData = await User.findAll({
-            attributes: [
-                'id',
-                'name',
-                [sequelize.fn('sum', sequelize.col('expenses.amount')), 'totalExpenses']
-            ],
-            include: [{
-                model: Expense,
-                attributes: [] // Empty array as we only want aggregated data, not individual rows
-            }],
-            group: ['user.id'],
-            order: [[sequelize.literal('totalExpenses'), 'DESC']]
-        });
+        const users = await User.findAll();
+        const leaderboardData = await Promise.all(users.map(async user => ({
+            id: user.id,
+            name: user.name,
+            totalExpenses: await Expense.sum('amount', { where: { userId: user.id, type: 'expense' } })
+        })));
+        leaderboardData.sort((left, right) => right.totalExpenses - left.totalExpenses);
 
         res.status(200).json(leaderboardData);
     } catch (error) {
