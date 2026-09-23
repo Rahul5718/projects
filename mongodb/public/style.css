@@ -94,7 +94,7 @@ main h1 {
 
 .btn.danger {
   background-color: #dc3545;
-  color: #white;
+  color: white;
 }
 
 .btn.danger:hover {

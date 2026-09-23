@@ -2,13 +2,14 @@ const mongodb = require('mongodb');
 const { getDb } = require('../util/database');
 
 const ObjectId = mongodb.ObjectId;
+const normalizeId = value => (value ? value.toString() : value);
 
 class User {
   constructor(username, email, cart, id) {
     this.name = username;
     this.email = email;
-    this.cart = cart; // { items: [] }
-    this._id = id ? new ObjectId(id) : null;
+    this.cart = cart || { items: [] };
+    this._id = id || null;
   }
 
   save() {
@@ -19,35 +20,56 @@ class User {
   // Get cart products with details using native MongoDB $in operator
   getCart() {
     const db = getDb();
-    const productIds = this.cart.items.map(i => {
-      return i.productId;
-    });
+    const cartItems = this.cart && this.cart.items ? this.cart.items : [];
+    const productIds = cartItems.map(i => i.productId);
+
     return db
       .collection('products')
       .find({ _id: { $in: productIds } })
       .toArray()
       .then(products => {
         return products.map(p => {
+          const cartItem = cartItems.find(i => i.productId.toString() === p._id.toString());
           return {
             ...p,
-            quantity: this.cart.items.find(i => {
-              return i.productId.toString() === p._id.toString();
-            }).quantity
+            quantity: cartItem ? cartItem.quantity : 0
           };
         });
       });
   }
 
+  addToCart(productId) {
+    const db = getDb();
+    const cartItems = this.cart && this.cart.items ? this.cart.items : [];
+    const normalizedProductId = normalizeId(productId);
+    const existingItemIndex = cartItems.findIndex(item => normalizeId(item.productId) === normalizedProductId);
+
+    if (existingItemIndex >= 0) {
+      cartItems[existingItemIndex].quantity += 1;
+    } else {
+      cartItems.push({ productId: normalizedProductId, quantity: 1 });
+    }
+
+    this.cart = { items: cartItems };
+
+    return db
+      .collection('users')
+      .updateOne(
+        { _id: this._id },
+        { $set: { cart: { items: cartItems } } }
+      );
+  }
+
   // Delete product from cart using the filter hint
   deleteItemFromCart(productId) {
-    const updatedCartItems = this.cart.items.filter(item => {
-      return item.productId.toString() !== productId.toString();
-    });
+    const cartItems = this.cart && this.cart.items ? this.cart.items : [];
+    const normalizedProductId = normalizeId(productId);
+    const updatedCartItems = cartItems.filter(item => normalizeId(item.productId) !== normalizedProductId);
     const db = getDb();
     return db
       .collection('users')
       .updateOne(
-        { _id: new ObjectId(this._id) },
+        { _id: this._id },
         { $set: { cart: { items: updatedCartItems } } }
       );
   }
@@ -57,19 +79,18 @@ class User {
     return db
       .collection('users')
       .updateOne(
-        { _id: new ObjectId(this._id) },
+        { _id: this._id },
         { $set: { cart: { items: [] } } }
       );
   }
 
   static findById(userId) {
     const db = getDb();
+    const queryId = typeof userId === 'string' ? userId : new ObjectId(userId);
     return db
       .collection('users')
-      .findOne({ _id: new ObjectId(userId) })
-      .then(user => {
-        return user;
-      })
+      .findOne({ _id: queryId })
+      .then(user => user)
       .catch(err => {
         console.log(err);
       });
@@ -82,7 +103,7 @@ class User {
         const order = {
           items: products,
           user: {
-            _id: new ObjectId(this._id),
+            _id: this._id,
             name: this.name
           }
         };
@@ -93,7 +114,7 @@ class User {
         return db
           .collection('users')
           .updateOne(
-            { _id: new ObjectId(this._id) },
+            { _id: this._id },
             { $set: { cart: { items: [] } } }
           );
       });
@@ -101,13 +122,12 @@ class User {
 
   static getOrders(userId) {
     const db = getDb();
+    const queryId = typeof userId === 'string' ? userId : new ObjectId(userId);
     return db
       .collection('orders')
-      .find({ 'user._id': new ObjectId(userId) })
+      .find({ 'user._id': queryId })
       .toArray();
   }
 }
-
-
 
 module.exports = User;
